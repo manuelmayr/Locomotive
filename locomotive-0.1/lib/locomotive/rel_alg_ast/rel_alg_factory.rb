@@ -6,6 +6,41 @@ module RelAlgAst
 
 module RelAlgFactory
   private
+
+  class << self
+    def define_ranking_operators(*mtds)
+      mtds.each do |mtd|
+        name = mtd
+        define_method(name) do |expr, res, part, order|
+          abort_when_not_ast_nodes expr
+          abort_when_corrupted_schema(part + order.keys, expr.ann_schema)
+          abort_when_duplicates([res] + expr.ann_schema.keys)
+      
+          rank = RelAlgAstNode.new(
+                      name,
+                      nil,
+                      expr)
+      
+          rank.ann_res = res
+          rank.ann_order = order
+          rank.ann_part  = part
+      
+          rank.ann_schema = {}.merge(expr.ann_schema).merge({ res => [:int] })
+          
+          rank
+        end
+      end
+    end
+  end
+
+  def type_to_pf_type(type)
+    # === doesn't work with Classes
+    case type.class.to_s
+      when "Float"  then "dec"
+      when "Fixnum" then "int"
+    end
+  end
+ 
     
   def duplicates?(array)
     array.length > array.uniq.length
@@ -31,7 +66,7 @@ module RelAlgFactory
 
   def abort_when_duplicates(array)
     if duplicates? array
-      raise DuplicateException, "Duplicates found"
+      raise StandardError, "Duplicates found"
     end
   end
 
@@ -46,6 +81,8 @@ module RelAlgFactory
   end
 
   public 
+
+  define_ranking_operators :rank, :rowid
 
   # the proj_items list has the following structure
   # { :item1 => [:item1], :item2 => [:item3, :item4] }
@@ -62,9 +99,15 @@ module RelAlgFactory
             expr)
     # set the project items
     proj.ann_items = proj_items
-    # copy the schema
-    proj.ann_schema = copy_schema proj.ann_items.values.flatten,
-                                  expr.ann_schema
+    
+    # calculate a new schema
+    new_schema = {}
+    proj.ann_items.keys.each do |item|
+      proj.ann_items[item].each do |newitem|
+        new_schema[newitem] = expr.ann_schema[item]
+      end
+    end
+    proj.ann_schema = new_schema
     
     proj
   end
@@ -95,7 +138,7 @@ module RelAlgFactory
     abort_when_corrupted_schema [col2], right_expr.ann_schema
     
     eqjoin = RelAlgAstNode.new(
-               :join,
+               :eqjoin,
                nil,
                left_expr,
                right_expr)
@@ -108,6 +151,7 @@ module RelAlgFactory
   end
 
   # attach_vals = { :item => 2, :item2 => 5 }
+  # attach currently supports only one value 
   def attach(expr, attach_vals)
     # sanity checks
     abort_when_not_ast_nodes expr
@@ -120,21 +164,29 @@ module RelAlgFactory
     # FIXME: we need a type here
     attach.ann_schema = {}.merge(expr.ann_schema)
     attach_vals.each_key do |key|
-      attach.ann_schema[key] = [:integer]
+      attach.ann_schema[key] = [type_to_pf_type(attach_vals[key])]
     end
     attach
   end
 
+  def niltbl
+    niltbl = RelAlgAstNode.new(:nil)
+    niltbl.ann_schema = {}
+    niltbl
+  end
+
+ 
+  # values = { :col1 => val1, ..., :coln => valn }
   def littbl(values)
     # sanity checks
     abort_when_duplicates values.keys
 
     littbl = RelAlgAstNode.new(
-               :littbl)
+               :table)
     littbl.ann_values = values
     littbl.ann_schema = {}
     values.each_key do |key|
-      littbl.ann_schema[key] = [:integer]
+      littbl.ann_schema[key] = [type_to_pf_type(values[key])]
     end
     littbl
   end
@@ -146,16 +198,41 @@ module RelAlgFactory
     abort_when_corrupted_schema columns, expr.ann_schema
 
     raise StandardError, 'columns > 2' if columns.length > 2
+    raise StandardError, "operands have to be of" \
+                         " the same type (op1(#{expr.ann_schema[columns.first]})" \
+                         " vs. op2(#{expr.ann_schema[columns.last]})" if expr.ann_schema[columns.first] !=
+                                                                         expr.ann_schema[columns.last]
 
     fun = RelAlgAstNode.new(
-            :fun_1to1,
+            :fun,
             nil,
             expr)
 
     fun.ann_fun_kind = kind
-    fun.ann_schema =  copy_schema (expr.ann_schema.keys - columns), expr.ann_schema
-    fun.ann_schema[res] = [:integer]
+    fun.ann_operands = columns
+    fun.ann_result = res
+    fun.ann_schema = copy_schema (expr.ann_schema.keys - columns), expr.ann_schema
+    
+    fun.ann_schema[res] = expr.ann_schema[columns.first]
+                            
     fun
+  end
+
+  def union(expr1, expr2)
+    # sanity checks
+    abort_when_not_ast_nodes expr1, expr2
+    #raise StandardError, "schemas are not equal (#{expr1.ann_schema}" \
+    #                     " vs. #{expr2.ann_schema})" if expr1.ann_schema.to_a.sort.map { |el| [el.first,el.last.sort] } !=
+    #                                                    expr2.ann_schema.to_a.sort.map { |el| [el.first,el.last.sort] }
+    union = RelAlgAstNode.new(
+              :union,
+              nil,
+              expr1,
+              expr2)
+
+    union.ann_schema = {}.merge expr1.ann_schema
+
+    union
   end
 
   def serialize_rel(side, alg, iter, pos, items)

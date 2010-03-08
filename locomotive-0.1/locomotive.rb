@@ -22,6 +22,8 @@ require 'lib/locomotive/ruby_ast/boxed_type_inference'
 # <= ruby_ast_node
 require 'lib/locomotive/utils/ast2dot'
 # <= ruby_ast_node
+require 'lib/locomotive/utils/relalg2xml'
+# <= ruby_ast_node
 require 'lib/locomotive/translation/ruby_to_algebra_helper'
 require 'lib/locomotive/translation/ruby_to_algebra'
 # <= ruby_ast_node, rel_alg_ast_node

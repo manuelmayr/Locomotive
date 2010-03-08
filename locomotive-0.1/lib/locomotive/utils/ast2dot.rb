@@ -19,11 +19,22 @@ class AST2Dot
 
   def toDot(ast)
     node = @graph.add_node(ast.hash.to_s, 
-                           :label => ast.kind.to_s + ": "+ast.value.to_s + "\n" + if ast.ann_schema then
-                                                                                     ast.ann_schema.to_s
-                                                                                  else 
-                                                                                    ""
-                                                                                  end)
+               :label => ast.kind.to_s + 
+               ": " + ast.value.to_s + 
+               "\n" +
+               if ast.ann_xmlid then
+                 "xml_id: " +
+                 ast.ann_xmlid.to_s
+               else
+                 ""
+               end + "\n" +
+               if ast.ann_schema then
+                 "schema: " + 
+                 ast.ann_schema.to_s
+               else
+                 ""
+               end
+               )
     if ast.has_left_child? then
       @graph.add_edge(node, toDot(ast.left_child))
     end

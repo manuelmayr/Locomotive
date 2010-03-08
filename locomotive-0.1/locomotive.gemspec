@@ -15,6 +15,7 @@ Gem::Specification.new do |sp|
                "#{loco_lib}/ast_helpers/ast.rb",
                "#{loco_lib}/ast_helpers/ast_traversal.rb",
                "#{loco_lib}/utils/ast2dot.rb", 
+               "#{loco_lib}/utils/relalg2xml.rb", 
                "#{loco_lib}/ruby_ast/types.rb",
                "#{loco_lib}/ruby_ast/ast_exceptions.rb",
                "#{loco_lib}/rel_alg_ast/rel_alg_ast_node.rb",

@@ -19,13 +19,13 @@ module RubyToAlgebraHelper
   def define_translate_atomic(*mtds)
     mtds.each do |mtd|
       name = to_default_name(mtd)
-      print name
       define_method(name) do |loop,ast|
+        val = to_concrete_value(mtd, ast.value)
         cross(
           loop,
           attach(
             littbl(
-              { :item => ast.value}),
+              { :item => val}),
             { :pos => 1 }))
       end
     end
@@ -34,7 +34,6 @@ module RubyToAlgebraHelper
   def define_translate_binary_ops(*mtds)
     mtds.each do |mtd|
       name = to_default_name(mtd)
-      print name
       define_method(name) do |loop,ast|
         q1 = translate(loop,ast.left_child)
         q2 = translate(loop,ast.right_child)
@@ -44,13 +43,13 @@ module RubyToAlgebraHelper
               q1,
               project(
                 q2,
-                { :iter => [:iter_1], :pos => [:pos_1], :item => [:item_1] }),
+                { :iter => [:iter1], :pos => [:pos1], :item => [:item1] }),
               :iter,
-              :iter_1),
+              :iter1),
             ast.kind,
-            :item,
-            [:item, :item_1]),
-          { :iter => :iter, :item => :item, :pos => :pos })
+            :item2,
+            [:item, :item1]),
+          { :iter => [:iter], :item2 => [:item], :pos => [:pos] })
       end
     end
   end

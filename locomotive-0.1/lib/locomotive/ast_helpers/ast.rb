@@ -88,7 +88,7 @@ module AstNode
   # strategy. If nothing given simple
   # prefix-traversal is used
   def traverse(strategy=DEFAULT_TRAVERSE_STRATEGY, &block)
-    @strategy = strategy
+    @strategy ||= strategy
     @strategy.traverse(self, &block)
   end
 

@@ -6,9 +6,16 @@ module Translation
 
 class RubyToAlgebra
   extend ::Locomotive::Translation::RubyToAlgebraHelper 
-  define_translate_atomic     :@int, :@float
-  define_translate_binary_ops :+, :-, :*, :/,
-                              :==, :<, :>, :<=, :>=
+  define_translate_atomic     :@int, :@float, :@tstring_content
+  define_translate_binary_ops :+ => :add,
+                              :- => :subtract,
+                              :* => :multiply,
+                              :/ => :divide
+  define_translate_binary_cmp :== => :eq,
+                              :< => :lt,
+                              :> => :gt, 
+                              :<= => :leq,
+                              :>= => :geq
 
 
   def to_concrete_value(type, value)
@@ -23,8 +30,7 @@ class RubyToAlgebra
   end
 
   def translate_args_add(loop, ast)
-    right = translate(loop, ast.right_child)
-    return right if ast.left_child.kind == :args_new
+    return right = translate(loop, ast.right_child) if ast.left_child.kind == :args_new
     left = translate(loop, ast.left_child)
 
     project(
@@ -42,7 +48,6 @@ class RubyToAlgebra
           :iter2  => :ascending,
           :pos => :ascending }),
       { :iter => [:iter], :pos1 => [:pos], :item => [:item] })
-
   end
 
   # translation wrapper

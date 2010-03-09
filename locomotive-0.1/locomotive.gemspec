@@ -28,7 +28,9 @@ Gem::Specification.new do |sp|
                "#{loco_lib}/rel_alg_ast/rel_alg_factory.rb",
                "#{loco_lib}/translation/ruby_to_algebra_helper.rb",
                "#{loco_lib}/translation/translation_exceptions.rb",
-               "#{loco_lib}/rel_alg_ast/rel_alg_exceptions.rb"
+               "#{loco_lib}/rel_alg_ast/rel_alg_exceptions.rb",
+               "#{loco_lib}/engine/sql/engine.rb",
+               "#{loco_lib}/rel_alg_ast/table.rb"
              ]
   sp.require_path = "."
   sp.test_files = FileList["{test}/**/*test.rb"].to_a

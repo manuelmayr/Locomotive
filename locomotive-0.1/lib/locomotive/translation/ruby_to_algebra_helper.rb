@@ -31,8 +31,30 @@ module RubyToAlgebraHelper
     end
   end
 
-  def define_translate_binary_ops(*mtds)
-    mtds.each do |mtd|
+  def define_translate_binary_cmp(mtds)
+    mtds.keys.each do |mtd|
+      name = to_default_name(mtd)
+      define_method(name) do |loop,ast|
+        q1 = translate(loop,ast.left_child)
+        q2 = translate(loop,ast.right_child)
+        project(
+          send(mtds[mtd],
+            eqjoin(
+              q1,
+              project(
+                q2,
+                { :iter => [:iter1], :pos => [:pos1], :item => [:item1] }),
+              :iter,
+              :iter1),
+            :item2,
+            [:item, :item1]),
+          { :iter => [:iter], :item2 => [:item], :pos => [:pos] })
+      end
+    end
+  end
+
+  def define_translate_binary_ops(mtds)
+    mtds.keys.each do |mtd|
       name = to_default_name(mtd)
       define_method(name) do |loop,ast|
         q1 = translate(loop,ast.left_child)
@@ -46,7 +68,7 @@ module RubyToAlgebraHelper
                 { :iter => [:iter1], :pos => [:pos1], :item => [:item1] }),
               :iter,
               :iter1),
-            ast.kind,
+            mtds[mtd],
             :item2,
             [:item, :item1]),
           { :iter => [:iter], :item2 => [:item], :pos => [:pos] })

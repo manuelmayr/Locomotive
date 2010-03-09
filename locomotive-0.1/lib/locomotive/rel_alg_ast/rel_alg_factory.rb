@@ -31,6 +31,36 @@ module RelAlgFactory
         end
       end
     end
+
+    def define_binary_cmp_operators(*mtds)
+      mtds.each do |mtd|
+        name = mtd
+        define_method(name) do |expr, res, columns|
+          abort_when_not_ast_nodes expr
+          abort_when_duplicates(expr.ann_schema.keys - columns + [res])
+          abort_when_corrupted_schema columns, expr.ann_schema
+      
+          raise ArgumentException, 'columns > 2' if columns.length > 2
+          raise ArgumentException, "operands have to be of" \
+                               " the same type (op1(#{expr.ann_schema[columns.first]})" \
+                               " vs. op2(#{expr.ann_schema[columns.last]})" if expr.ann_schema[columns.first] !=
+                                                                               expr.ann_schema[columns.last]
+      
+          cmp = RelAlgAstNode.new(
+                  name,
+                  nil,
+                  expr)
+      
+          cmp.ann_operands = columns
+          cmp.ann_result = res
+          cmp.ann_schema = copy_schema (expr.ann_schema.keys - columns), expr.ann_schema
+          
+          cmp.ann_schema[res] = [:bool]
+                                  
+          cmp
+        end
+      end
+    end
   end
 
   def type_to_pf_type(type)
@@ -66,7 +96,7 @@ module RelAlgFactory
 
   def abort_when_duplicates(array)
     if duplicates? array
-      raise StandardError, "Duplicates found"
+      raise DuplicateException, "Duplicates found"
     end
   end
 
@@ -83,6 +113,7 @@ module RelAlgFactory
   public 
 
   define_ranking_operators :rank, :rowid
+  define_binary_cmp_operators :eq, :lt, :gt, :leq, :geq
 
   # the proj_items list has the following structure
   # { :item1 => [:item1], :item2 => [:item3, :item4] }
@@ -197,8 +228,8 @@ module RelAlgFactory
     abort_when_duplicates(expr.ann_schema.keys - columns + [res])
     abort_when_corrupted_schema columns, expr.ann_schema
 
-    raise StandardError, 'columns > 2' if columns.length > 2
-    raise StandardError, "operands have to be of" \
+    raise ArgumentException, 'columns > 2' if columns.length > 2
+    raise ArgumentException, "operands have to be of" \
                          " the same type (op1(#{expr.ann_schema[columns.first]})" \
                          " vs. op2(#{expr.ann_schema[columns.last]})" if expr.ann_schema[columns.first] !=
                                                                          expr.ann_schema[columns.last]
@@ -221,7 +252,7 @@ module RelAlgFactory
   def union(expr1, expr2)
     # sanity checks
     abort_when_not_ast_nodes expr1, expr2
-    #raise StandardError, "schemas are not equal (#{expr1.ann_schema}" \
+    #raise CorruptedSchema, "schemas are not equal (#{expr1.ann_schema}" \
     #                     " vs. #{expr2.ann_schema})" if expr1.ann_schema.to_a.sort.map { |el| [el.first,el.last.sort] } !=
     #                                                    expr2.ann_schema.to_a.sort.map { |el| [el.first,el.last.sort] }
     union = RelAlgAstNode.new(
@@ -241,7 +272,7 @@ module RelAlgFactory
     abort_when_corrupted_schema [iter,pos] + items, alg.ann_schema
 
     ser = RelAlgAstNode.new(
-            :serialize_rel,
+            "serialize relation".to_sym,
             nil,
             side,
             alg)

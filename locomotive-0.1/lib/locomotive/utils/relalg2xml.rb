@@ -32,15 +32,21 @@ class RelAlg2XML
         end
       end
     end
-  end
 
-  def op_to_xml(kind)
-    case kind
-      when :+ then "add"
-      when :- then "subtract"
-      when :* then "multiply"
-      when :/ then "divide"
+    def define_content_cmp(*mtds)
+      mtds.each do |mtd|
+        name = "content_#{mtd}".to_sym
+        define_method(name) do |ast|
+          cols = []
+          cols << "<kind name=\"#{ast.ann_fun_kind}\"/>"
+          cols << column(nil, :name => ast.ann_result, :new => true)
+          cols << column(nil, :name => ast.ann_operands.first, :new => false, :position => 1)
+          cols << column(nil, :name => ast.ann_operands.last, :new => false, :position => 2)
+          cols.join("\n")
+        end
+      end
     end
+
   end
 
   def edge(attrs)
@@ -84,6 +90,7 @@ class RelAlg2XML
   public
 
   define_content_ranks :rowid, :rank
+  define_content_cmp   :eq, :lt, :gt, :leq, :geq
 
   def initialize(ast)
     @ast = ast
@@ -127,28 +134,7 @@ class RelAlg2XML
   def content_union(ast)
   end
 
-  def content_rank(ast)
-    cols = []
-    cols << column(nil, :name => ast.ann_res, :new => true)
-    pos = -1
-    ast.ann_order.keys.each do |ord|
-      cols << column(nil, :name => ord, :function => "sort",
-                             :pos => pos += 1,
-                             :direction => ast.ann_order[ord],
-                             :new => false)
-    end
-
-    pos = -1
-    ast.ann_part.each do |part|
-      cols << column(nil, :name => part, :function => "part",
-                             :pos => pos + 1,
-                             :new => false)
-    end
-
-    cols.join("\n")
-  end
-
-  def content_serialize_rel(ast)
+  def content_serialize_relation(ast)
     cols = []
     cols << column(nil, :name => ast.ann_iter, :new => false, :function => :iter)
     cols << column(nil, :name => ast.ann_pos, :new => false, :function => :pos)
@@ -173,7 +159,7 @@ class RelAlg2XML
 
   def content_fun(ast)
     cols = []
-    cols << "<kind name=\"#{op_to_xml(ast.ann_fun_kind)}\"/>"
+    cols << "<kind name=\"#{ast.ann_fun_kind}\"/>"
     cols << column(nil, :name => ast.ann_result, :new => true)
     cols << column(nil, :name => ast.ann_operands.first, :new => false, :position => 1)
     cols << column(nil, :name => ast.ann_operands.last, :new => false, :position => 2)
@@ -187,7 +173,12 @@ class RelAlg2XML
 #{schema ast.ann_schema}
 </schema>
 <content>
-#{content_method = "content_#{ast.kind}"
+#{ content_method = "content_#{->(kind) {
+                               if kind == "serialize relation".to_sym then
+                                 :serialize_relation
+                               else
+                                 kind
+                               end }[ast.kind]}"
   if !self.respond_to?(content_method) then
     "<nocontent/>"
   else

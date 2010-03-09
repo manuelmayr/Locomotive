@@ -33,4 +33,4 @@ require 'lib/locomotive/translation/ruby_to_algebra'
 
 require "active_record"
 
-Locomotive::RelAlgAst::Table.engine = Locomotive::Sql.Engine.new(ActiveRecord::Base)
+Locomotive::RelAlgAst::Table.engine = Locomotive::Engines::Sql::Engine.new(ActiveRecord::Base)

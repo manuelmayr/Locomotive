@@ -1,5 +1,7 @@
 module Locomotive
 
+module Engines 
+
 module Sql
 
 class Engine
@@ -18,6 +20,8 @@ class Engine
   def method_missing(method, *args, &block)
     @ar.connection.send(method, *args, &block)
   end
+
+end
 
 end
 

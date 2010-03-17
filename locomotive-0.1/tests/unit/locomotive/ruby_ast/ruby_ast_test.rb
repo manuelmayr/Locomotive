@@ -74,10 +74,10 @@ class RubyAstTest < Test::Unit::TestCase
     #      /          \
     #   (:int, 1)   (:int, 2)
     i = 1
-    @ruby_ast.traverse(AstHelpers::PostfixTraverse.new) do |ast|
-                                                          ast.ann_postfix_id = i
-                                                          i += 1
-                                                        end
+    @ruby_ast.traverse(AstHelpers::PostOrderTraverse) do |ast|
+                                                        ast.ann_postfix_id = i
+                                                        i += 1
+                                                      end
     assert_equal 3, @ruby_ast.ann_postfix_id
     assert_equal 1, @ruby_ast.left_child.ann_postfix_id
     assert_equal 2, @ruby_ast.right_child.ann_postfix_id

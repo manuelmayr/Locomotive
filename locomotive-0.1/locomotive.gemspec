@@ -30,7 +30,13 @@ Gem::Specification.new do |sp|
                "#{loco_lib}/translation/translation_exceptions.rb",
                "#{loco_lib}/rel_alg_ast/rel_alg_exceptions.rb",
                "#{loco_lib}/engine/sql/engine.rb",
-               "#{loco_lib}/rel_alg_ast/table.rb"
+               "#{loco_lib}/rel_alg_ast/table.rb",
+               "#{loco_lib}/rel_alg_ast/rel_alg_ops.rb",
+               "#{loco_lib}/rel_alg_ast/types.rb",
+               "#{loco_lib}/misc/type_check.rb",
+               "#{loco_lib}/rel_alg_ast/attributes.rb",
+               "#{loco_lib}/misc/array_ext.rb",
+               "#{loco_lib}/utils/xml.rb"
              ]
   sp.require_path = "."
   sp.test_files = FileList["{test}/**/*test.rb"].to_a

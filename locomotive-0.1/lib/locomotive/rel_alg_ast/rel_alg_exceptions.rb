@@ -1,12 +1,18 @@
 module Locomotive
 
-module RelAlgAst
+module RelationalAlgebra
 
-class CorruptedSchemaException < StandardError; end
-class NotAstNodesException < StandardError; end
-class DuplicatesException < StandardError; end
+module Exceptions
+
+class IdError < StandardError; end
+class AbstractClassError < StandardError; end
+class Duplicates < StandardError; end
+class CorruptedSchema < StandardError; end
+class ITblsNotEqual < StandardError; end
 
 class ArgumentException < StandardError; end
+
+end
 
 end
 

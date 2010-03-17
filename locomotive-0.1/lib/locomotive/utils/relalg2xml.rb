@@ -89,7 +89,7 @@ class RelAlg2XML
 
   public
 
-  define_content_ranks :rowid, :rank
+  define_content_ranks :rowid, :rank, :rownum
   define_content_cmp   :eq, :lt, :gt, :leq, :geq
 
   def initialize(ast)
@@ -146,10 +146,21 @@ class RelAlg2XML
     cols.join("\n")
   end
 
+  def content_ref_tbl(ast)
+    cols = []
+    cols << "<table name=\"#{ast.value}\">"
+    ast.ann_items.keys.each do |col|
+      cols << column(nil, :name => col, :tname => ast.ann_items[col],
+                          :type => ast.ann_schema[col].join(","))
+    end
+    cols << "</table>"
+    cols.join("\n")
+  end
+
   def content_attach(ast)
     cols = []
     col = ast.value.first.first
-    cols << column(value(ast.value[col], :type => ast.ann_schema[col].first),
+    cols << column(value(ast.value[col].first, :type => ast.ann_schema[col].first),
                    :name => col, :new => true)
     cols.join("\n")
   end
@@ -167,11 +178,11 @@ class RelAlg2XML
   end
 
   def to_xml_wrapper(ast)
+#<schema>
+#{schema ast.ann_schema}
+#</schema>
 <<XMLNODE
 <node id=\"#{ast.ann_xmlid.to_s}\" kind=\"#{ast.kind.to_s}\">
-<schema>
-#{schema ast.ann_schema}
-</schema>
 <content>
 #{ content_method = "content_#{->(kind) {
                                if kind == "serialize relation".to_sym then
@@ -208,7 +219,7 @@ XMLNODE
 <logical_query_plan unique_names=\"true\">
 PROLOG
 
-    @ast.traverse_strategy = Locomotive::AstHelpers::PostfixTraverse.new
+    @ast.traverse_strategy = Locomotive::AstHelpers::PostOrderTraverse
     @ast.traverse do |ast|
       node_list << to_xml_wrapper(ast)
     end

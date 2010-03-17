@@ -3,13 +3,13 @@ module Locomotive
 module AstHelpers
 
 class TraverseStrategy
-  def traverse(ast, &block)
+  def TraverseStrategy.traverse(ast, &block)
     raise "Called abstract method traverse"
   end
 end
 
-class PrefixTraverse < TraverseStrategy
-  def traverse(ast, &block)
+class PreOrderTraverse < TraverseStrategy
+  def PreOrderTraverse.traverse(ast, &block)
     block.call(ast)
     traverse(ast.left_child,  &block) if ast.has_left_child?
     traverse(ast.right_child, &block) if ast.has_right_child?
@@ -18,8 +18,8 @@ class PrefixTraverse < TraverseStrategy
   end
 end
 
-class PostfixTraverse < TraverseStrategy
-  def traverse(ast, &block)
+class PostOrderTraverse < TraverseStrategy
+  def PostOrderTraverse.traverse(ast, &block)
     traverse(ast.left_child,  &block) if ast.has_left_child?
     traverse(ast.right_child, &block) if ast.has_right_child?
     block.call(ast)
@@ -28,8 +28,8 @@ class PostfixTraverse < TraverseStrategy
   end
 end
 
-class InfixTraverse < TraverseStrategy
-  def traverse(ast, &block)
+class InOrderTraverse < TraverseStrategy
+  def InOrderTraverse.traverse(ast, &block)
     traverse(ast.left_child,  &block) if ast.has_left_child?
     block.call(ast)
     traverse(ast.right_child, &block) if ast.has_right_child?

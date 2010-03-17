@@ -17,10 +17,11 @@ module Annotations
   # overwrite the respond_to method
   # to pretend there are ann_-methods
   def respond_to? sym
+    @annotations ||= {}
     if @annotations.member? sym
       true
     else
-      super.responds_to? sym
+      super.respond_to? sym
     end
   end
 
@@ -35,7 +36,7 @@ module Annotations
     if /^ann_(?<data>\w+)=?/ =~ key_str
       @annotations ||= {}
 
-      data_sym = data.to_sym
+      data_sym = "ann_#{data}".to_sym
       if key_str[-1,1] == "=" then
         @annotations[data_sym] = args[0]
       else

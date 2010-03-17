@@ -7,6 +7,14 @@ module RelAlgAst
 module RelAlgFactory
   private
 
+  def type(t)
+    case t
+      when :integer then :int
+      when :float then :dec
+      when :string then :str 
+    end
+  end
+
   class << self
     def define_ranking_operators(*mtds)
       mtds.each do |mtd|
@@ -85,7 +93,7 @@ module RelAlgFactory
   end
 
   def ast_nodes?(*nodes)
-    nodes.all? { |node| node.class == RelAlgAstNode }
+    nodes.all? { |node| node.class <= RelAlgAstNode }
   end
 
   def abort_when_not_ast_nodes(*nodes)
@@ -112,7 +120,7 @@ module RelAlgFactory
 
   public 
 
-  define_ranking_operators :rank, :rowid
+  define_ranking_operators :rank, :rowid, :rownum
   define_binary_cmp_operators :eq, :lt, :gt, :leq, :geq
 
   # the proj_items list has the following structure
@@ -159,6 +167,28 @@ module RelAlgFactory
     cross
   end
 
+  # procates sideeffects
+  def ref_tbl(name)
+    # no sanity checks here
+    #
+    ref_tbl = Table.new("article")
+    itemid = -1
+    ref_tbl.ann_items = Hash[*ref_tbl.columns.collect do |col|
+                                           ["item#{itemid += 1}".to_sym, col.name.to_sym]
+                                         end.flatten ]
+     
+    itemid = -1
+    ref_tbl.ann_schema = Hash[*ref_tbl.columns.collect do |col|
+                                           ["item#{itemid += 1}".to_sym, [type(col.type)]]
+                                           end.flatten ]
+    ref_tbl.ann_schema.keys.each do |col|
+      ref_tbl.ann_schema[col] = [ref_tbl.ann_schema[col]]
+    end            
+
+    ref_tbl.ann_keys = [ :item0 ] 
+    ref_tbl                                                     
+  end
+
   def eqjoin(left_expr, right_expr, col1, col2)
     # sanity checks
     # check if the join columns are in 
@@ -195,7 +225,7 @@ module RelAlgFactory
     # FIXME: we need a type here
     attach.ann_schema = {}.merge(expr.ann_schema)
     attach_vals.each_key do |key|
-      attach.ann_schema[key] = [type_to_pf_type(attach_vals[key])]
+      attach.ann_schema[key] = [attach_vals[key].last]
     end
     attach
   end

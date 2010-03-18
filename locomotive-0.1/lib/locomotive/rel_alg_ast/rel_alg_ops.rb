@@ -84,6 +84,10 @@ class Schema
       end.join
     end
   end
+
+  def clone
+    Schema.new( self.schema.clone )
+  end
 end
 
 # represents a variant operator of the
@@ -126,6 +130,24 @@ class Operator < RelAlgAstNode
       cont_list.join
     end
   end
+
+  # returns all free variables in this plan
+  def free
+    # attention: for convenience we use
+    # the underlying ast framework
+    fv = []
+    fv += left_child.free if has_left_child?
+    fv += right_child.free if has_right_child?
+  end
+
+  # returns all bound variables in this plan
+  def bound
+    # attention: for convenience we use
+    #  the underlying ast framework
+    bv = []
+    bv += left_child.bound if has_left_child?
+    bv += right_child.bound if has_right_child?
+  end
 end
 
 #
@@ -142,6 +164,10 @@ class Leaf < Operator
     raise AbstractClassError,
           "#{self.class} is an abstract class" if self.class == Leaf
     super()
+  end
+
+  def set(var,plan)
+    self.clone
   end
 end
 
@@ -200,13 +226,141 @@ class Binary < Operator
   end
 end
 
-class Nil < Leaf; end
+class Variable < Leaf
+
+  @id_pool = []
+  class << self
+    attr_accessor :id_pool
+    
+    def new_variable
+      new_id = Variable.id_pool.max + 1
+      Variable.id_pool << new_id
+      Variable.new(new_id)
+    end
+  end
+
+  attr_accessor :id
+  def_sig :id=, Integer
+  def_node :variable
+
+  def initialize(id)
+    self.id = id
+    Variable.id_pool << self.id
+    self.schema = Schema.new({ Iter(1) => [Nat.instance],
+                               Pos(1) => [Nat.instance],
+                               # Dummy item type
+                               Item(1) => [Nat.instance] })
+  end
+
+  def clone
+    Variable.new(id)
+  end
+
+  def xml_content
+    content do
+      variable :name => id
+    end
+  end
+
+  def ==(other)
+    other.class == Variable and
+    other.id == self.id
+  end
+
+  def set(var,plan)
+    if var == self
+      plan.clone
+    else
+      self.clone
+    end
+  end
+
+  def free
+    [ self.clone ]
+  end
+end
+
+class RelLambda < Binary
+  def_node :parametrized_plan
+  def initialize(op1, op2)
+    super(op1,op2)
+  end
+
+  def left_and_right(op1,op2)
+    self.schema = Schema.new( { Iter(1) => [Nat.instance],
+                                Pos(1) => [Nat.instance],
+                                # this is a dummy node
+                                Item(1) => [Nat.instance] } )
+    super(op1,op2)
+  end
+  def_sig :left_and_right, Variable, Operator
+
+  def serialize
+    xml_id = 0
+    self.traverse do |op|
+      op.ann_xml_id = xml_id += 1
+    end
+
+    xml_list = []
+
+    self.traverse_strategy = Locomotive::AstHelpers::PostOrderTraverse
+    self.traverse do |op|
+      xml_list << op.to_xml
+    end
+
+    parametrized_plan :comment => "not mentioned for execution" do
+      xml_list.join
+    end
+  end
+
+  def clone
+    RelLambda.new(op1.clone,
+                  op2.clone)
+  end
+
+  def set(var,plan)
+    if var == self.child
+      self.clone
+    else
+      if right.bound.member?(var) or
+         plan.bound.member(left)
+         LambdaRel.new(
+           left.clone,
+           right.set(var, plan))
+      else
+         # alpha reduction
+         new_var = Variable.new_variable
+         Lambda.new(
+           new_var,
+           right.set(left,new_var)).set(var,plan)
+      end
+    end
+  end
+
+  def free
+    # the variable in the left branch
+    # is not a free variable anymore
+    right.free - [left]
+  end
+
+  def bound
+    # the variable in the right branch
+    # is now a bound variable
+    right.clone
+  end
+end
+
+class Nil < Leaf
+  def clone
+    Nil.new
+  end
+end
 class LiteralList
   extend Locomotive::TypeChecking::Signature
   include Locomotive::XML
   def_node :column
 
-  private
+  protected
 
   attr_accessor :literal_list
   def_sig :literal_list=, { Attribute => [Atomic] }
@@ -239,6 +393,10 @@ class LiteralList
       end
     end.join
   end
+
+  def clone
+    LiteralList.new( literal_list.clone )
+  end
 end
 
 class LiteralTable < Leaf
@@ -265,6 +423,10 @@ class LiteralTable < Leaf
     content do
       lit_list.to_xml
     end
+  end
+
+  def clone
+    LiteralTable.new( lit_list.clone )
   end
 end
 
@@ -336,6 +498,10 @@ class RefTbl < Leaf
       end
     end
   end
+
+  def clone
+    RefTbl.new(name.clone, engine)
+  end
 end
 
 class ProjectList
@@ -379,6 +545,10 @@ class ProjectList
       end.join
     end.join
   end
+
+  def clone
+    ProjectList.new( project_list.clone )
+  end
 end
 
 class Project < Unary
@@ -413,6 +583,16 @@ class Project < Unary
       proj_list.to_xml
     end
   end
+
+  def clone
+    Project.new(child.clone, proj_list.clone)
+  end
+
+  def set(var,plan)
+    Project.new(
+      child.set(var,plan),
+      proj_list.clone)
+  end
 end
 
 class AttachItem
@@ -436,6 +616,10 @@ class AttachItem
       atom.to_xml
     end 
   end
+
+  def clone
+    AttachItem.new(attribute, atom)
+  end
 end
 
 class Attach < Unary
@@ -458,11 +642,26 @@ class Attach < Unary
       item.to_xml
     end
   end
+
+  def clone
+    Attach.new(child.clone, item.clone)
+  end
+
+  def set(var, plan)
+    Attach.new(
+      child.set(var,plan),
+      item)
+  end
 end
 
 class SortDirection
   include Singleton
   include Locomotive::XML
+
+  def clone
+    # singleton
+    self
+  end
 end
 
 class Ascending < SortDirection
@@ -509,6 +708,10 @@ class SortList
              :new => false
     end.join
   end
+
+  def clone
+     SortList.new( sort_list.clone )
+  end
 end
 
 
@@ -520,7 +723,7 @@ class Numbering < Unary
 
   def initialize(op, res, sortby)
     self.res,
-    self.sort_by = res, sortby || {} 
+    self.sort_by = res, sortby || SortList.new({}) 
     super(op)
   end
 
@@ -539,6 +742,19 @@ class Numbering < Unary
       [column( :name => res.to_xml, :new => true),
        sort_by.to_xml].join
     end
+  end
+
+  def clone
+    self.class.new(child.clone,
+                   res.clone,
+                   sort_by.clone)
+  end
+
+  def set(var, plan)
+    self.class.new(
+      child.set(var,plan),
+      res.clone,
+      sort_by.clone)
   end
 end
 
@@ -575,6 +791,19 @@ class RowNum < Numbering
        end.join].join
     end
   end
+
+  def clone
+    RowNum.new(child.clone,
+               res.clone,
+               part.clone,
+               sort_by.clone)
+  end
+
+  def set(var,plan)
+    RowNum.new(
+      child.set(var,plan),
+      res.clone, part.clone, sort_by.clone)
+  end
 end
 
 class RowRank < Numbering
@@ -584,6 +813,20 @@ class Rank < Numbering
 end
 
 class RowId < Numbering
+  def initialize(op, res)
+    super(op,res,nil)
+  end
+
+  def clone
+    RowId.clone(child.clone,
+                res.clone)
+  end
+
+  def set(var,plan)
+    RowId.new(
+      child.set(var,plan),
+      res.clone)
+  end
 end
 
 class Fun
@@ -591,6 +834,11 @@ class Fun
 
   def to_xml
     self.class.to_s.split("::").last.downcase
+  end
+
+  def clone
+    #singleton
+    self
   end
 end
 class Addition < Fun
@@ -623,7 +871,8 @@ class Function < Unary;
   def_sig :res=, Attribute
   def_sig :operator=, Fun
   def_sig :items=, [Attribute]
-  
+
+ 
   def initialize(op, operator, res, items)
     self.operator,
     self.res,
@@ -658,6 +907,21 @@ class Function < Unary;
       ].join
     end
   end
+
+  def clone
+    Function.new(child.clone,
+                 operator.clone,
+                 res.clone,
+                 items.clone)
+  end
+
+  def set(var, plan)
+    Function.new(
+      child.set(var,plan),
+      operator.clone,
+      res.clone,
+      items.clone) 
+  end
 end
 
 class Join < Binary; end
@@ -665,6 +929,16 @@ class Set < Binary
   def left_and_right(op1,op2)
     self.schema = op1.schema.clone
     super(op1,op2)
+  end
+
+  def clone
+    self.class.new(left.clone, right.clone)
+  end
+
+  def set(var,plan)
+    self.class.new(
+      left.set(var,plan),
+      right.set(var,plan))
   end
 end
 
@@ -698,6 +972,21 @@ class Comparison < Unary
     self.schema = op.schema + Schema.new({ self.res => [Bool.instance]})
     super(op)
   end
+
+  def clone
+    self.class.new(child.clone,
+                   res.clone,
+                   item1.clone,
+                   item2.clone)
+  end
+
+  def set(var,plan)
+    self.class.new(
+      child.set(var,plan),
+      res.clone,
+      item1.clone,
+      item2.clone)
+  end
 end
 
 class Serialize < Binary; end
@@ -711,6 +1000,16 @@ class Cross < Join
   def left_and_right(op1,op2)
     self.schema = op1.schema + op2.schema
     super(op1,op2)
+  end
+
+  def clone
+    Cross.new(left.clone,right.clone)
+  end
+
+  def set(var,plan)
+    Cross.new(
+      left.set(var,plan),
+      right.set(var,plan))
   end
 end
 
@@ -749,10 +1048,28 @@ class Eqjoin < Join
       ].join
     end
   end
+
+  def clone
+    Eqjoin.new(left.clone,right.clone,
+               item1.clone, item2.clone)
+  end
+
+  def set(var,plan)
+    Eqjoin.new(
+      left.set(var,plan),
+      right.set(var,plan),
+      item1.clone,
+      item2.clone)
+  end
 end
 
 class PredicateOp
   include Singleton
+
+  def clone
+    # singleton
+    self
+  end
 end
 
 class Equivalence < PredicateOp
@@ -803,6 +1120,11 @@ class Predicate
        column(:name => second.to_xml, :new => false, :position => 2)].join
     end
   end
+
+  def clone
+    Predicate.new(op.clone,
+                  first.clone,second.clone)
+  end
 end
 
 class PredicateList
@@ -834,6 +1156,10 @@ class PredicateList
       pred.to_xml
     end.join
   end
+
+  def clone
+    PredicateList.new( pred_list.clone )
+  end
 end
 
 class ThetaJoin < Join
@@ -857,18 +1183,23 @@ class ThetaJoin < Join
       predicate_list.to_xml
     end
   end
+
+  def clone
+    ThetaJoin.new(left.clone,
+                  right.clone,
+                  pred_list.clone)
+  end
+
+  def set(var,plan)
+    ThetaJoin.new(
+      left.set(var,plan),
+      right.set(var,plan))
+  end
 end
 
 # set operators 
-class Union < Set
-  def left_and_right(op1,op2)
-    if op1.schema.attributes.to_a != op2.schema.attributes.to_a
-      raise CorruptedSchema,
-            "#{op1.schema.attributes.to_a} != #{op2.schema.attributes.to_a}"
-    end
-    super(op1,op2)
-  end
-end
+# FIXME: sanity checks (schemas have to be equal)
+class Union < Set; end
 class Difference < Set; end
 
 # comparison operators
@@ -953,6 +1284,23 @@ class SerializeRelation < Serialize
       xml_list.join
     end
   end
+
+  def clone
+    Serialization.new(left.clone,
+                      right.clone,
+                      iter.clone,
+                      pos.clone,
+                      items.clone)
+  end
+
+  def set(var,plan)
+    Serialization.new(
+      left.set(var,plan),
+      right.set(var,plan),
+      iter.clone,
+      pos.clone,
+      items.clone)
+  end
 end
 
 class PayloadList
@@ -977,6 +1325,9 @@ class PayloadList
     end 
   end
 
+  def clone
+    PayloadList.new( attributes.clone )
+  end
 end
 
 # Forward declaration 
@@ -999,7 +1350,6 @@ class SurrogateList
   def +(sur)
     SurrogateList.new(surrogates.merge(sur.surrogates))
   end
-
 
   def itapp(q_0, itbl_2)
     if self.keys != itbl_2.keys
@@ -1025,10 +1375,7 @@ class SurrogateList
             Attach.new(
               q2_in.plan,
               AttachItem.new(Iter(2),Atomic.new(1, Nat.instance)))),
-          Item(2),
-          SortList.new( { Iter(1) => Ascending.instance,
-                          Iter(2) => Ascending.instance,
-                          Pos(1)  => Ascending.instance } ))
+          Item(2))
     #(2)
     c_new = c.class.new(c.id + 100)
     q_prime = Project.new(
@@ -1066,6 +1413,10 @@ class SurrogateList
       super(mtd, *params, &block) 
     end
   end
+
+  def clone
+    SurrogateList.new( surrogates.clone )
+  end
 end
 
 class QueryInformationNode
@@ -1083,11 +1434,23 @@ class QueryInformationNode
     self.payload_items,
     self.surrogates = plan, payloads, surrogates
   end
+
+  def clone
+    QueryInformationNode.new(plan.clone,
+                             payloads.clone,
+                             surrogates.clone)
+  end
 end
 
 class ResultType
+  include Singleton
   def to_xml
     self.class.to_s.split("::").last.upcase
+  end
+
+  def clone
+    # singleton
+    self
   end
 end
 class Tuple < ResultType; end 
@@ -1121,6 +1484,10 @@ class QueryPlanBundle
         end
       end.join
     end
+  end
+
+  def clone
+    QueryPlanBundle.new( logical_query_plans.clone )
   end
 end
 

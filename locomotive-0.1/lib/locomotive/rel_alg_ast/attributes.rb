@@ -60,6 +60,11 @@ class Attribute
     # hash but it works quite well
     self.class.object_id + id.object_id
   end
+
+  def clone
+    # an attributes contains only an id
+    self.class.new(id)
+  end
 end
 
 class Iter < Attribute; end

@@ -15,6 +15,11 @@ class Type
     end
   end
 
+  def clone
+    # since all types are singletons
+    # we can return the object itself
+    self
+  end
 end
 class Dbl < Type; end
 class Dec < Dbl; end
@@ -50,6 +55,10 @@ class Atomic
     end
   end
 
+  def clone
+    Atomic.new(self.value,
+               self.type)
+  end
 end
 
 end

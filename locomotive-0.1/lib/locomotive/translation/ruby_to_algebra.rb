@@ -43,10 +43,7 @@ class RubyToAlgebra
             Attach.new(
               q_e2.plan,
               AttachItem.new(Iter(2), Atomic.new(1, Nat.instance)))),
-          Item(2),
-          SortList.new( { Iter(1) => Ascending.instance,
-                          Iter(2) => Ascending.instance,
-                          Pos(1)  => Ascending.instance } ))
+          Item(2))
 
     # calculate new positions
     q_prime = Project.new(
@@ -57,10 +54,11 @@ class RubyToAlgebra
                                  Pos(1) => Ascending.instance })),
                 ProjectList.new( { Iter(1) => [Iter(1)],
                                    Pos(1)  => [Pos(1)] }.merge(
-                                   Hash[*(q_e1.payload_items.to_a - q_e1.surrogates.keys).collect do |itm|
-                                     [itm, [itm]]
-                                   end.flatten_once]).merge(
-                                    Item(2) => q_e1.surrogates.keys)))
+                                   Hash[*(q_e1.payload_items.to_a -
+                                          q_e1.surrogates.keys).collect do |itm|
+                                            [itm, [itm]]
+                                          end.flatten_once]).merge(
+                                   Item(2) => q_e1.surrogates.keys)))
 
     # append inner tables
     itbl_prime = q_e1.surrogates.itapp(q,q_e2.surrogates)
@@ -89,18 +87,17 @@ class RubyToAlgebra
                 Cross.new(
                   loop,
                   q_ref = RefTbl.new(ast.left_child.value)),
-                Iter(2),
-                SortList.new( {} )),
-              Pos(1),
-              SortList.new( {} ))
+                Iter(2)),
+              Pos(1))
 
         q_prime = Project.new(q,
                           ProjectList.new( { q_ref.name_mapping.keys.first => [Item(1)],
                                              Pos(1) => [Pos(1)],
                                              Iter(1) => [Iter(1)],
-                                             Iter(2) => [Item(2)]}))
+                                             Iter(2) => [Item(2)]} ))
 
-        (q_ref.name_mapping.keys - [q_ref.name_mapping.keys.first]).each do |item|
+        (q_ref.name_mapping.keys -
+        [q_ref.name_mapping.keys.first]).each do |item|
           q_prime = Union.new(
                       q_prime,
                       Project.new(q,
@@ -130,7 +127,6 @@ class RubyToAlgebra
                                                    SurrogateList.new({})) })) 
 
         box(loop,q_in)
-        q_in
       else q = nil 
     end
   end
@@ -166,9 +162,11 @@ class RubyToAlgebra
     
     lplans = []
     lplans <<
-     SerializeRelation.new(
-        Nil.new, q_in.plan,
-        Iter(1), Pos(1), q_in.payload_items.to_a)
+     RelLambda.new(
+       Variable.new(1),
+       SerializeRelation.new(
+          Nil.new, q_in.plan,
+          Iter(1), Pos(1), q_in.payload_items.to_a))
     lplans += collect_surrogates(q_in.surrogates)
     QueryPlanBundle.new(lplans)
   end

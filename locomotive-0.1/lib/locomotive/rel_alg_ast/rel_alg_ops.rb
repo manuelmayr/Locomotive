@@ -18,9 +18,7 @@ module Operators
 # contains a schema.
 #
 class Schema
-  extend Locomotive::TypeChecking::Signature
   include Locomotive::XML
-
   def_node :_schema_, :col
 
   protected
@@ -93,9 +91,7 @@ end
 # represents a variant operator of the
 # relational algebra
 class Operator < RelAlgAstNode
-  extend Locomotive::TypeChecking::Signature
   include Locomotive::XML
-
   def_node :node, :content, :column, :edge
 
   attr_accessor :schema
@@ -138,6 +134,7 @@ class Operator < RelAlgAstNode
     fv = []
     fv += left_child.free if has_left_child?
     fv += right_child.free if has_right_child?
+    fv
   end
 
   # returns all bound variables in this plan
@@ -147,6 +144,7 @@ class Operator < RelAlgAstNode
     bv = []
     bv += left_child.bound if has_left_child?
     bv += right_child.bound if has_right_child?
+    bv
   end
 end
 
@@ -197,6 +195,58 @@ class Unary < Operator
   end
 end
 
+class Cast < Unary
+  def_node :_type_
+
+  attr_accessor :res,
+                :type,
+                :item 
+  def_sig :res, Attribute
+  def_sig :type, Type
+  def_sig :item, Attribute
+
+  def initialize(op, res, type, item)
+    self.res,
+    self.type,
+    self.item = res, type, item
+    super(op)
+  end
+
+  def child=(op)
+    unless op.schema.attributes?([item])
+      raise CorruptedSchema,
+            "Schema #{op.schema.attributes} does not " \
+            "contain all attributes of #{item}."
+    end
+    self.schema = op.schema + { self.res => [self.type] }
+    super(op)
+  end
+
+  def xml_content
+    content do
+      column :name => res.to_xml, :new => true
+      column :name => item.to_xml, :new => false
+      _type_ :name => type.to_xml
+    end
+  end
+
+  def clone
+    Cast.new(
+      child.clone,
+      res.clone,
+      type.clone,
+      item.clone)
+  end
+
+  def set(var,plan)
+    Cast.new(
+      child.set(var,plan),
+      res.clone,
+      type.clone,
+      item.clone)
+  end
+end
+
 #
 # A binary operator has exactly two children
 # 
@@ -239,21 +289,25 @@ class Variable < Leaf
     end
   end
 
-  attr_accessor :id
+  attr_accessor :id, :items
   def_sig :id=, Integer
+  def_sig :items=, [Attribute]
   def_node :variable
 
-  def initialize(id)
-    self.id = id
+
+  def initialize(id, *items)
+    self.id,
+    self.items = id, items
     Variable.id_pool << self.id
     self.schema = Schema.new({ Iter(1) => [Nat.instance],
-                               Pos(1) => [Nat.instance],
-                               # Dummy item type
-                               Item(1) => [Nat.instance] })
+                               Pos(1) => [Nat.instance] }.merge(
+                                 Hash[*items.collect do |it|
+                                         [it, [Nat.instance]]
+                                       end.flatten_once]) )
   end
 
   def clone
-    Variable.new(id)
+    Variable.new(id, *items.clone)
   end
 
   def xml_content
@@ -277,6 +331,83 @@ class Variable < Leaf
 
   def free
     [ self.clone ]
+  end
+end
+
+class AggrFun
+  include Singleton
+
+  def to_xml
+    self.class.to_s.split("::").last.downcase.to_sym
+  end
+
+  def clone
+    self
+  end
+end
+
+class Count < AggrFun
+end
+
+class Aggr < Unary
+  def_node :column, :aggregate
+
+  attr_accessor :item, :part_list, :aggr_kind
+  def_sig :aggr_kind=, AggrFun
+  def_sig :part_list=, [Attribute]
+  def_sig :item=, Attribute
+
+  def initialize(op, aggr_kind, item, part)
+    self.item = item
+    self.aggr_kind = aggr_kind
+    self.part_list = part
+    super(op)
+  end
+
+  def child=(op)
+    unless op.schema.attributes?(part_list)
+      raise CorruptedSchema,
+            "Schema #{op.schema.attributes} does not " \
+            "contain all attributes of #{part_list}."
+    end
+    unless op.schema.attributes?([item])
+      raise CorruptedSchema,
+            "Schema #{op.schema.attributes} does not " \
+            "contain all attributes of #{item}."
+    end
+    self.schema = Schema.new( { self.item => [Nat.instance] }.merge(
+                             Hash[*part_list.collect do |p|
+                                     [p, op.schema[p]]
+                                   end.flatten_once]))
+                          
+    super(op)
+  end
+
+  def xml_content
+    content do
+      part_list.collect do |part|
+        column :name => part.to_xml, :function => :partition, :new => false
+      end.join + 
+      (aggregate :kind => aggr_kind.to_xml do
+        column :name => item.to_xml, :new => true
+      end)
+    end
+  end
+
+  def clone
+    Aggr.new(
+      child.clone,
+      aggr_kind.clone,
+      item.clone,
+      part_list.clone)
+  end
+
+  def set(var,plan)
+    Aggr.new(
+      child.set(var,plan),
+      aggr_kind.clone,
+      item.clone,
+      part_list.clone)
   end
 end
 
@@ -313,24 +444,30 @@ class RelLambda < Binary
     end
   end
 
+  # performs a beta reduction on the right
+  # plan side
+  def apply(arg)
+    right.set(left, arg)
+  end
+
   def clone
     RelLambda.new(op1.clone,
                   op2.clone)
   end
 
   def set(var,plan)
-    if var == self.child
-      self.clone
+    if var == self.left
+      right.clone
     else
-      if right.bound.member?(var) or
-         plan.bound.member(left)
-         LambdaRel.new(
+      if !right.free.member?(var) or
+         !plan.free.member?(left)
+         RelLambda.new(
            left.clone,
            right.set(var, plan))
       else
          # alpha reduction
          new_var = Variable.new_variable
-         Lambda.new(
+         RelLambda.new(
            new_var,
            right.set(left,new_var)).set(var,plan)
       end
@@ -346,7 +483,7 @@ class RelLambda < Binary
   def bound
     # the variable in the right branch
     # is now a bound variable
-    right.clone
+    [left.clone] + right.bound
   end
 end
 
@@ -355,8 +492,8 @@ class Nil < Leaf
     Nil.new
   end
 end
+
 class LiteralList
-  extend Locomotive::TypeChecking::Signature
   include Locomotive::XML
   def_node :column
 
@@ -431,7 +568,7 @@ class LiteralTable < Leaf
 end
 
 class RefTbl < Leaf
-  def_node :table
+  def_node :table, :properties, :keys, :key
 
   private
 
@@ -460,9 +597,9 @@ class RefTbl < Leaf
 
   def get_name_mapping
     id = 0
-    Hash[*columns.collect do |col|
-            [ Item(id += 1), NamedAttribute(col.name) ]
-          end.flatten]
+    columns.collect do |col|
+       [ Item(id += 1), NamedAttribute(col.name) ]
+     end.to_hash
   end
   
   public
@@ -505,7 +642,6 @@ class RefTbl < Leaf
 end
 
 class ProjectList
-  extend Locomotive::TypeChecking::Signature
   include Locomotive::XML
   def_node :column
 
@@ -595,8 +731,53 @@ class Project < Unary
   end
 end
 
+class Select < Unary
+  attr_accessor :item
+
+  def initialize(op,  item)
+    self.item = item
+    super(op)
+  end
+
+  def child=(op)
+    unless op.schema.attributes?([item])
+      raise CorruptedSchema,
+            "Schema #{op.schema.attributes} does not " \
+            "contain all attributes of #{item}."
+    end
+    
+    pp item
+    pp op.schema[item]
+
+    unless op.schema[item].member? Bool.instance
+      raise CorruptedSchema,
+            "#{item}(#{op.schema[item]}) doesn have the type Boolean."
+    end
+
+    self.schema = op.schema.clone
+    super(op)
+  end
+
+  def xml_content
+    content do
+      column :name => item.to_xml, :new => false
+    end
+  end
+
+  def clone
+    Select.new(
+      self.child.clone,
+      self.item.clone)
+  end
+
+  def set(var,plan)
+    Select.new(
+      child.set(var,plan),
+      item.clone)
+  end
+end
+
 class AttachItem
-  extend Locomotive::TypeChecking::Signature
   include Locomotive::XML
   def_node :column
 
@@ -621,6 +802,68 @@ class AttachItem
     AttachItem.new(attribute, atom)
   end
 end
+
+class BinOp < Unary
+  attr_accessor :res, :item1, :item2
+  def_sig :res=, Attribute
+  def_sig :item1=, Attribute
+  def_sig :item2=, Attribute
+
+  def initialize(op, res, item1, item2)
+    self.res,
+    self.item1,
+    self.item2 = res, item1, item2
+    super(op)
+  end
+
+  def child=(op)
+    unless op.schema.attributes?([item1])
+      raise CorruptedSchema,
+            "Schema #{op.schema.attributes} does not " \
+            "contain all attributes of #{item1}."
+    end
+    unless op.schema.attributes?([item2])
+      raise CorruptedSchema,
+            "Schema #{op.schema.attributes} does not " \
+            "contain all attributes of #{item2}."
+    end
+
+    self.schema = op.schema +
+             Schema.new({ res => [Bool.instance] })
+
+    super(op)
+  end
+
+  def xml_content
+    content do
+      [column(:name => res.to_xml, :new => true),
+       column(:name => item1.to_xml, :new => false, :position => 1),
+       column(:name => item2.to_xml, :new => false, :position => 2)].join
+    end
+  end
+
+  def xml_kind
+    self.class.to_s.split('::').last.downcase.to_sym
+  end
+
+  def clone
+    self.class.new(child.clone,
+                   res.clone,
+                   item1.clone,
+                   item2.clone)
+  end
+
+  def set(var, plan)
+    self.class.new(
+      child.set(var,plan),
+      res.clone,
+      item1.clone,
+      item2.clone)
+  end
+end
+
+class Or < BinOp; end
+class And < BinOp; end
 
 class Attach < Unary
   attr_accessor :item
@@ -650,13 +893,16 @@ class Attach < Unary
   def set(var, plan)
     Attach.new(
       child.set(var,plan),
-      item)
+      item.clone)
   end
 end
 
 class SortDirection
   include Singleton
-  include Locomotive::XML
+
+  def to_xml
+    self.class.to_s.split('::').last.downcase.to_sym
+  end
 
   def clone
     # singleton
@@ -664,14 +910,11 @@ class SortDirection
   end
 end
 
-class Ascending < SortDirection
-end
+class Ascending < SortDirection; end
 
-class Descending < SortDirection
-end
+class Descending < SortDirection; end
 
 class SortList
-  extend Locomotive::TypeChecking::Signature
   include Locomotive::XML
   def_node :column
 
@@ -784,7 +1027,7 @@ class RowNum < Numbering
       [column(:name => res.to_xml, :new => true),
        sort_by.to_xml,
        part.collect do |p|
-         column :name => p,
+         column :name => p.to_xml,
                 :function => :part,
                 :position => pos += 1,
                 :new => false
@@ -818,7 +1061,7 @@ class RowId < Numbering
   end
 
   def clone
-    RowId.clone(child.clone,
+    RowId.new(child.clone,
                 res.clone)
   end
 
@@ -859,6 +1102,11 @@ end
 class Division < Fun
   def to_xml
     :divide
+  end
+end
+class Contains < Fun
+  def to_xml
+    :contains
   end
 end
 
@@ -943,6 +1191,7 @@ class Set < Binary
 end
 
 class Comparison < Unary
+  def_node 
   attr_accessor :res,
                 :item1,
                 :item2
@@ -986,6 +1235,16 @@ class Comparison < Unary
       res.clone,
       item1.clone,
       item2.clone)
+  end
+
+  def xml_content
+        content do
+      [column(:name => res.to_xml, :new => true),
+       column(:name => item1.to_xml, :new => false, :position => 1),
+       column(:name => item2.to_xml, :new => false, :position => 2)
+      ].join
+    end
+
   end
 end
 
@@ -1063,34 +1322,11 @@ class Eqjoin < Join
   end
 end
 
-class PredicateOp
-  include Singleton
-
-  def clone
-    # singleton
-    self
-  end
-end
-
-class Equivalence < PredicateOp
-  def to_xml
-    :eq
-  end
-end
-
-
-
 class Predicate
-  extend Locomotive::TypeChecking::Signature
   include Locomotive::XML
   def_node :column, :comparison
 
   private
-
-  def op=(op)
-    @op = op
-  end
-  def_sig :op=, PredicateOp
 
   def first=(first)
     @first = first
@@ -1104,31 +1340,31 @@ class Predicate
 
   public
 
-  attr_reader :op,
-              :first,
+  attr_reader :first,
               :second
 
-  def initialize(op_, first_, second_)
-    self.op,
+  def initialize(first_, second_)
     self.first,
-    self.second = op_, first_, second_
+    self.second = first_, second_
   end
 
+  def clone
+    self.class.new(first.clone,second.clone)
+  end
+end
+
+
+class Equivalence < Predicate
   def to_xml
-    comparison :kind => op.to_xml do
+    comparison :kind => :eq do
       [column(:name => first.to_xml, :new => false, :position => 1),
        column(:name => second.to_xml, :new => false, :position => 2)].join
     end
   end
-
-  def clone
-    Predicate.new(op.clone,
-                  first.clone,second.clone)
-  end
 end
 
+
 class PredicateList
-  extend Locomotive::TypeChecking::Signature
   include Locomotive::XML
   def_node :content
 
@@ -1158,13 +1394,11 @@ class PredicateList
   end
 
   def clone
-    PredicateList.new( pred_list.clone )
+    PredicateList.new( *pred_list.clone )
   end
 end
 
 class ThetaJoin < Join
-  extend Locomotive::TypeChecking::Signature
-
   attr_accessor :predicate_list
   def_sig :predicate_list=, PredicateList
 
@@ -1187,7 +1421,7 @@ class ThetaJoin < Join
   def clone
     ThetaJoin.new(left.clone,
                   right.clone,
-                  pred_list.clone)
+                  predicate_list.clone)
   end
 
   def set(var,plan)
@@ -1203,14 +1437,35 @@ class Union < Set; end
 class Difference < Set; end
 
 # comparison operators
-class Equal < Comparison; end
-class LessThen < Comparison; end
-class GreaterThen < Comparison; end
-class LessEqualThen < Comparison; end
-class GreaterEqualThen < Comparison; end
+class Equal < Comparison;
+  def xml_kind
+    :eq
+  end
+end
+class LessThen < Comparison
+  def xml_kind
+    :lt
+  end
+end
+class GreaterThen < Comparison
+  def xml_kind
+    :gt
+  end
+end
+class LessEqualThen < Comparison
+  def xml_kind
+    :lteq
+  end
+end
+class GreaterEqualThen < Comparison
+  def xml_kind
+    :gteq
+  end
+end
 
 # serialize operator
 class SerializeRelation < Serialize
+  include Locomotive::XML
   def_node :logical_query_plan
 
   attr_accessor :iter,
@@ -1304,8 +1559,6 @@ class SerializeRelation < Serialize
 end
 
 class PayloadList
-  extend Locomotive::TypeChecking::Signature
-
   private
 
   attr_accessor :attributes
@@ -1334,8 +1587,6 @@ end
 class QueryInformationNode; end
 
 class SurrogateList
-  extend Locomotive::TypeChecking::Signature
-
   protected
 
   attr_accessor :surrogates
@@ -1386,8 +1637,8 @@ class SurrogateList
                     ProjectList.new( { Iter(2) => [ Iter(3) ],
                                        Item(2) => [ Item(3) ],
                                        c       => [ c_new ] })),
-                  PredicateList.new( Predicate.new(Equivalence.instance, Iter(2), Iter(3)),
-                                     Predicate.new(Equivalence.instance, Iter(1), c_new) )),
+                  PredicateList.new( Equivalence.new(Iter(2), Iter(3)),
+                                     Equivalence.new(Iter(1), c_new) )),
                 ProjectList.new( { Item(3) => [ Iter(1) ],
                                    Pos(1)  => [ Pos(1) ] }.merge(
                                      { Item(2) => q1_in.surrogates.keys }).merge(
@@ -1420,24 +1671,26 @@ class SurrogateList
 end
 
 class QueryInformationNode
-  extend Locomotive::TypeChecking::Signature
   attr_accessor :plan,
                 :payload_items,
-                :surrogates
+                :surrogates,
+                :methods
 
   def_sig :plan=, Operator
   def_sig :payload_items=, PayloadList
   def_sig :surrogates=, SurrogateList
+  def_sig :methods=, { Symbol => RelLambda }
 
-  def initialize(plan, payloads, surrogates)
+  def initialize(plan, payloads, surrogates, methods={})
     self.plan,
     self.payload_items,
     self.surrogates = plan, payloads, surrogates
+    self.methods = methods
   end
 
   def clone
     QueryInformationNode.new(plan.clone,
-                             payloads.clone,
+                             payload_items.clone,
                              surrogates.clone)
   end
 end
@@ -1456,7 +1709,6 @@ end
 class Tuple < ResultType; end 
 
 class QueryPlanBundle
-  extend Locomotive::TypeChecking::Signature
   include Locomotive::XML
   def_node :query_plan_bundle,
            :query_plan,
@@ -1496,3 +1748,4 @@ end
 end
 
 end
+

@@ -14,6 +14,7 @@ require 'lib/locomotive/rel_alg_ast/types'
 require 'lib/locomotive/rel_alg_ast/attributes'
 require 'lib/locomotive/engine/sql/engine'
 require 'lib/locomotive/misc/array_ext'
+require 'lib/locomotive/misc/hash_ext'
 
 require 'lib/locomotive/rel_alg_ast/rel_alg_ast_node'
 # <= annotations, ast

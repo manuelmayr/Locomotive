@@ -5,8 +5,6 @@ module RelationalAlgebra
 module Attributes
 
 class Attribute
-  extend Locomotive::TypeChecking::Signature
-
   protected
 
   def nth id
@@ -33,6 +31,10 @@ class Attribute
     @id = id 
   end
   def_sig :id=, Fixnum
+
+  def inc(val)
+    self.id += val
+  end
  
   def to_xml
     # Be careful of classes that are nested in modules
@@ -46,24 +48,31 @@ class Attribute
     self.id == other.id
   end
 
-  # We want to use attributes as keys
-  # for a hash-object, so we have to
-  # overwrite the eql?- and hash-method
-  # to make it work 
-  def eql?(other)
-    self.==(other)
-  end
-  def_sig :eql?, Attribute
+  module HashKeys
+    # We want to use attributes as keys
+    # for a hash-object, so we have to
+    # overwrite the eql?- and hash-method
+    # to make it work 
+    def eql?(other)
+      self.==(other)
+    end
+    def_sig :eql?, Attribute
 
-  def hash
-    # not the best algorithm for calculating a
-    # hash but it works quite well
-    self.class.object_id + id.object_id
+    def hash
+      # not the best algorithm for calculating a
+      # hash but it works quite well
+      self.class.object_id + id.object_id
+    end
   end
+  include HashKeys
 
   def clone
     # an attributes contains only an id
     self.class.new(id)
+  end
+
+  def inspect
+    "<#{self.class.to_s.split('::').last} #{id}>"
   end
 end
 
@@ -75,13 +84,19 @@ class Pos < Attribute; end
 def Pos(id)
   Pos.new(id)
 end
-class Item < Attribute; end
+class Item < Attribute
+
+include Comparable
+def <=>(other)
+  self.id <=> other.id
+end
+def_sig :<=>, Item
+
+end
 def Item(id)
   Item.new(id)
 end
 class NamedAttribute < Attribute
-  extend Locomotive::TypeChecking::Signature
-
   attr_reader :name
  
   def initialize(name, id=0)
@@ -109,19 +124,31 @@ class NamedAttribute < Attribute
     self.id == other.id
   end
 
-  # We want to use attributes as keys
-  # for a hash-object, so we have to
-  # overwrite the eql?- and hash-method
-  # to make it work 
-  def eql?(other)
-    self.==(other)
+  module HashKeys
+    # We want to use attributes as keys
+    # for a hash-object, so we have to
+    # overwrite the eql?- and hash-method
+    # to make it work 
+    def eql?(other)
+      self.==(other)
+    end
+    def_sig :eql?, Attribute
+  
+    def hash
+      # not the best algorithm for calculating a
+      # hash but it works quite well
+      self.class.object_id + id.object_id + name.object_id
+    end
   end
-  def_sig :eql?, Attribute
+  include HashKeys
 
-  def hash
-    # not the best algorithm for calculating a
-    # hash but it works quite well
-    self.class.object_id + id.object_id + name.object_id
+  def inspect
+    "<#{self.class.to_s.split('::').last} name:#{name} id:#{id}>"
+  end
+
+  def clone
+    # an attributes contains only an id
+    NamedAttribute.new(name,id)
   end
 end
 def NamedAttribute(name, id=0)

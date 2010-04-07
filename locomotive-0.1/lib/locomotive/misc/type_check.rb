@@ -121,6 +121,7 @@ module Signature
     end
     intercept_method(sym, types)
   end
+  Module.send(:include, self)
 end
 
 end

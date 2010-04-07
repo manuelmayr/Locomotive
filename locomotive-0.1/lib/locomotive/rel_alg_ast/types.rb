@@ -20,6 +20,10 @@ class Type
     # we can return the object itself
     self
   end
+
+  def inspect
+    "<#{self.class.to_s.split('::').last}>"
+  end
 end
 class Dbl < Type; end
 class Dec < Dbl; end

@@ -1,0 +1,8 @@
+require 'locomotive/relational_algebra/rel_alg_ast_node'
+require 'locomotive/relational_algebra/rel_alg_exceptions'
+require 'locomotive/relational_algebra/attributes'
+require 'locomotive/relational_algebra/types'
+require 'locomotive/relational_algebra/schema'
+require 'locomotive/relational_algebra/ordering'
+require 'locomotive/relational_algebra/operators'
+require 'locomotive/relational_algebra/query_information'

@@ -1,0 +1,7 @@
+require 'locomotive/misc'
+require 'locomotive/tree_helpers'
+require 'locomotive/ruby_ast'
+require 'locomotive/utils'
+require 'locomotive/engine'
+require 'locomotive/relational_algebra'
+require 'locomotive/translation'

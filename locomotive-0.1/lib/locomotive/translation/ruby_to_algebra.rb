@@ -1,4 +1,4 @@
-include Locomotive::RelationalAlgebra::Operators
+include Locomotive::RelationalAlgebra
 
 module Locomotive
 

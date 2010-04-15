@@ -1,0 +1,2 @@
+require 'locomotive/relational_algebra/operators/serialization/basic_serialize'
+require 'locomotive/relational_algebra/operators/serialization/serialize_relation'

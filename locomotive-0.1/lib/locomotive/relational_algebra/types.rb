@@ -2,8 +2,6 @@ module Locomotive
 
 module RelationalAlgebra
 
-module Types
-
 class Type
   include Singleton
   include Locomotive::XML
@@ -63,8 +61,6 @@ class Atomic
     Atomic.new(self.value,
                self.type)
   end
-end
-
 end
 
 end

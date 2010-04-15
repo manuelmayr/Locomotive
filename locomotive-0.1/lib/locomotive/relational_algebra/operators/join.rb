@@ -1,0 +1,5 @@
+require 'locomotive/relational_algebra/operators/join/basic_join'
+require 'locomotive/relational_algebra/operators/join/cross'
+require 'locomotive/relational_algebra/operators/join/equi_join'
+require 'locomotive/relational_algebra/operators/join/predicates'
+require 'locomotive/relational_algebra/operators/join/theta_join'

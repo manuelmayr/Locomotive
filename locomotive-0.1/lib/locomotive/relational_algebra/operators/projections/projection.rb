@@ -46,13 +46,12 @@ module Locomotive
     class Project < Unary
       private
     
-      attr_accessor :proj_list
-      def_sig :proj_list=, ProjectList
+      attr_reader :proj_list
     
       public
     
       def initialize(op, proj_list)
-        self.proj_list = proj_list
+        @proj_list = ProjectList.new(proj_list)
         super(op)
       end
     

@@ -6,6 +6,10 @@ class Type
   include Singleton
   include Locomotive::XML
 
+  class << self
+    alias :type :instance
+  end
+
   def initialize()
     if self.class == Type
       raise AbstractClassError,

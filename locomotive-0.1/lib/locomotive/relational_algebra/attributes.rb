@@ -78,6 +78,14 @@ module Locomotive
     def Iter(id)
       Iter.new(id)
     end
+    class Outer < Iter; end
+    def Outer(id)
+      Outer.new(id)
+    end
+    class Inner < Iter; end
+    def Inner(id)
+      Inner.new(id)
+    end
     class Pos < Attribute; end
     def Pos(id)
       Pos.new(id)

@@ -29,7 +29,7 @@ module Locomotive
            sort_by.to_xml,
            part.collect do |p|
              column :name => p.to_xml,
-                    :function => :part,
+                    :function => :partition,
                     :position => pos += 1,
                     :new => false
            end.join].join

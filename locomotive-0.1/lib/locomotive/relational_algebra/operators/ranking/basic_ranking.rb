@@ -3,24 +3,22 @@ module Locomotive
   module RelationalAlgebra
 
     class Numbering < Unary
-      attr_accessor :res,
-                    :sort_by
-      def_sig :res=, Attribute
-      def_sig :sort_by=, SortList
+      attr_reader :res,
+                  :sort_by
     
       def initialize(op, res, sortby)
-        self.res,
-        self.sort_by = res, sortby || SortList.new({}) 
+        @res,
+        @sort_by = res, SortList.new(sortby) || SortList.new({}) 
         super(op)
       end
     
       def child=(op)
-        unless op.schema.attributes?(self.sort_by.attributes)
+        unless op.schema.attributes?(sort_by.attributes)
           raise CorruptedSchema,
                 "Schema #{op.schema.attributes} does not " \
                 "contain all attributes of #{sort_by.attributes}."
         end
-        self.schema = op.schema + Schema.new({ res => [Nat.instance] })
+        self.schema = op.schema + Schema.new({ @res => [Nat.instance] })
         super(op)
       end
     
@@ -44,7 +42,6 @@ module Locomotive
           sort_by.clone)
       end
     end
-
 
   end
 

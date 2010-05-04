@@ -52,9 +52,11 @@ module Locomotive
         @lit_list = llist
       end
       def_sig :lit_list=, LiteralList
+      private :lit_list
+
     
       def initialize(llist)
-        self.lit_list = llist
+        self.lit_list = LiteralList.new(llist)
       end
     
       def xml_kind

@@ -9,6 +9,13 @@ module Locomotive
     class RelAlgAstNode
       include AstHelpers::AstNode
       include AstHelpers::Annotations
+
+      [:project,
+       :row_num, :row_id, :rank, :row_rank].each do |op|
+        define_method(op) do |*args|
+          Kernel.const_get(op.classify).new(self, *args)
+        end
+      end
     end
   
   end

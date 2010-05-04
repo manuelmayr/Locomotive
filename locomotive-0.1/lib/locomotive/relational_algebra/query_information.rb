@@ -11,6 +11,8 @@ module Locomotive
       public
       delegate :[],
                :to_a,
+               :collect,
+               :max,
                :to => :attributes
     
       def initialize(ary)

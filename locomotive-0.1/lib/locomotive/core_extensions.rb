@@ -1,0 +1,5 @@
+require "locomotive/core_extensions/class.rb"
+require "locomotive/core_extensions/module.rb"
+require "locomotive/core_extensions/array.rb"
+require "locomotive/core_extensions/inflector.rb"
+require "locomotive/core_extensions/symbol.rb"

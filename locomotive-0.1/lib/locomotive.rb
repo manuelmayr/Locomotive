@@ -1,7 +1,9 @@
-require 'locomotive/misc'
-require 'locomotive/tree_helpers'
-require 'locomotive/ruby_ast'
-require 'locomotive/utils'
-require 'locomotive/engine'
-require 'locomotive/relational_algebra'
-require 'locomotive/translation'
+require "singleton"
+require "locomotive/misc"
+require "locomotive/core_extensions"
+require "locomotive/tree_helpers"
+require "locomotive/ruby_ast"
+require "locomotive/utils"
+require "locomotive/engine"
+require "locomotive/relational_algebra"
+#require "locomotive/translation"

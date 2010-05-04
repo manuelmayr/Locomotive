@@ -10,8 +10,16 @@ module Locomotive
       include AstHelpers::AstNode
       include AstHelpers::Annotations
 
-      [:project,
-       :row_num, :row_id, :rank, :row_rank].each do |op|
+      [:project, :attach,
+       :or, :and,
+       :aggr,
+       :function,
+       :select,
+       :difference, :union,
+       :cross, :equi_join, :theta_join,
+       :equal, :greater_then, :greater_equal_then, :less_then, :less_equal_then,
+       :row_num, :row_id, :rank, :row_rank,
+       :serialize_relation].each do |op|
         define_method(op) do |*args|
           Kernel.const_get(op.classify).new(self, *args)
         end

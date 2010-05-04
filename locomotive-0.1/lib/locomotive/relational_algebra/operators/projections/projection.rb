@@ -47,11 +47,26 @@ module Locomotive
       private
     
       attr_reader :proj_list
+
+      def to_project_list(list)
+        case
+          when Hash === list then
+            pp "foo1"
+            ProjectList.new(list)
+          when Array === list then
+            pp "foo2"
+            ProjectList.new(list.collect do |item|
+                              [item, [item]]
+                            end.to_hash)
+        end
+      end
     
       public
     
       def initialize(op, proj_list)
-        @proj_list = ProjectList.new(proj_list)
+        @proj_list = to_project_list proj_list
+        pp @proj_list
+        pp to_project_list proj_list
         super(op)
       end
     

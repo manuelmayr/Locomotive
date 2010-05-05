@@ -17,7 +17,7 @@ module Locomotive
        :select,
        :difference, :union,
        :cross, :equi_join, :theta_join,
-       :equal, :greater_then, :greater_equal_then, :less_then, :less_equal_then,
+       :equal, :greater_than, :greater_equal_than, :less_than, :less_equal_than,
        :row_num, :row_id, :rank, :row_rank,
        :serialize_relation].each do |op|
         define_method(op) do |*args|

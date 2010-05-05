@@ -2,7 +2,7 @@ module Locomotive
 
   module RelationalAlgebra
 
-    class GreaterThen < Comparison
+    class GreaterThan < Comparison
       def xml_kind
         :gt
       end

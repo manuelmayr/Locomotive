@@ -3,7 +3,7 @@ module Locomotive
   module RelationalAlgebra
 
 
-    class GreaterEqualThen < Comparison
+    class GreaterEqualThan < Comparison
       def xml_kind
         :gteq
       end

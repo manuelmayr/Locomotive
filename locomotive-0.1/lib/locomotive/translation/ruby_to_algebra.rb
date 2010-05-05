@@ -48,10 +48,10 @@ class RubyToAlgebra
                               :* => Multiplication,
                               :/ => Division
   define_translate_binary_cmp :== => Equal,
-                              :< => LessThen,
-                              :> => GreaterThen, 
-                              :<= => LessEqualThen,
-                              :>= => GreaterEqualThen
+                              :< => LessThan,
+                              :> => GreaterThan, 
+                              :<= => LessEqualThan,
+                              :>= => GreaterEqualThan
 
   def join(q_in)
     # join all surrogate tables

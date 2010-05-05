@@ -2,7 +2,7 @@ module Locomotive
 
   module RelationalAlgebra
 
-    class LessThen < Comparison
+    class LessThan < Comparison
       def xml_kind
         :lt
       end

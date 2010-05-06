@@ -15,7 +15,7 @@ module Locomotive
       protected
     
       attr_accessor :schema
-      def_sig :schema=, { Attribute => [Type] }
+      def_sig :schema=, { Attribute => [RType] }
       
       # check if there are duplicates in the schemas
       def duplicates?(schema)
@@ -55,7 +55,7 @@ module Locomotive
       def []=(attr,types)
         schema[attr] = types
       end
-      def_sig :[]=, Attribute, [Type]
+      def_sig :[]=, Attribute, [RType]
     
       def method_missing(mtd, *params, &block)
         if schema.respond_to? mtd

@@ -21,7 +21,8 @@ module Locomotive
        :row_num, :row_id, :rank, :row_rank,
        :serialize_relation].each do |op|
         define_method(op) do |*args|
-          Kernel.const_get(op.classify).new(self, *args)
+          
+          ::Locomotive::RelationalAlgebra.const_get(op.classify).new(self, *args)
         end
       end
     end

@@ -66,10 +66,10 @@ module Locomotive
               Union.new(
                 Attach.new(
                   q1_in.plan,
-                  AttachItem.new(Iter(2),Atomic.new(2, Nat.instance))),
+                  AttachItem.new(Iter(2),RAtomic.new(2, Nat.instance))),
                 Attach.new(
                   q2_in.plan,
-                  AttachItem.new(Iter(2),Atomic.new(1, Nat.instance)))),
+                  AttachItem.new(Iter(2),RAtomic.new(1, Nat.instance)))),
               Item(2))
         #(2)
         c_new = c.class.new(c.id + 100)

@@ -2,7 +2,7 @@ module Locomotive
 
 module RelationalAlgebra
 
-class Type
+class RType
   include Singleton
   include Locomotive::XML
 
@@ -11,7 +11,7 @@ class Type
   end
 
   def initialize()
-    if self.class == Type
+    if self.class == RType
       raise AbstractClassError,
             "#{self.class} is an abstract class" 
     end
@@ -23,24 +23,28 @@ class Type
     self
   end
 
+  def to_xml
+    self.class.to_s.split("::").last.downcase[1..-1]
+  end
+
   def inspect
     "<#{self.class.to_s.split('::').last}>"
   end
 end
-class Dbl < Type; end
-class Dec < Dbl; end
-class Int < Dec; end
-class Nat < Int; end
+class RDbl < RType; end
+class RDec < RDbl; end
+class RInt < RDec; end
+class RNat < RInt; end
 
-class Str < Type; end
+class RStr < RType; end
 
-class Bool < Type; end
+class RBool < RType; end
 
 #
 # An atomic value constists of a value an
 # its associated type
 #
-class Atomic
+class RAtomic
   extend Locomotive::TypeChecking::Signature
   include Locomotive::XML
 
@@ -48,7 +52,7 @@ class Atomic
 
   attr_accessor :value,
                 :type
-  def_sig :type=, Type
+  def_sig :type=, RType
 
   def initialize(val, ty)
     self.value,
@@ -62,8 +66,18 @@ class Atomic
   end
 
   def clone
-    Atomic.new(self.value,
+    RAtomic.new(self.value,
                self.type)
+  end
+end
+
+
+[:r_dbl, :r_dec, :r_int, :r_nat, :r_str, :r_bool].each do |meth|
+  meth_ = meth.classify.to_sym
+  define_method(meth_) do |val|
+    RAtomic.new(val, 
+                ::Locomotive::RelationalAlgebra.
+                const_get(meth_).type)
   end
 end
 

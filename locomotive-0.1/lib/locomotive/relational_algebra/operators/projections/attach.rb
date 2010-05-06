@@ -9,7 +9,7 @@ module Locomotive
       attr_accessor :attribute
       def_sig :attribute=, Attribute
       attr_accessor :atom
-      def_sig :atom=, Atomic
+      def_sig :atom=, RAtomic
     
       def initialize(attr, atom)
         self.attribute,

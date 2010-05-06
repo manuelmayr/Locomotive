@@ -9,7 +9,7 @@ module Locomotive
                     :type,
                     :item 
       def_sig :res, Attribute
-      def_sig :type, Type
+      def_sig :type, RType
       def_sig :item, Attribute
     
       def initialize(op, res, type, item)

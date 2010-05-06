@@ -9,7 +9,7 @@ module Locomotive
       protected
     
       attr_accessor :literal_list
-      def_sig :literal_list=, { Attribute => [Atomic] }
+      def_sig :literal_list=, { Attribute => [RAtomic] }
       
     
       public

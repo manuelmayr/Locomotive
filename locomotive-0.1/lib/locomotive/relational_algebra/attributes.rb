@@ -12,6 +12,13 @@ module Locomotive
            id.to_s
         end
       end 
+
+      # we only accept positive integers as ids
+      def id=(id)
+        raise IdError, "#{id} less than 0" if id < 0
+        @id = id 
+      end
+      def_sig :id=, Fixnum
      
       public
      
@@ -23,15 +30,9 @@ module Locomotive
         self.id = id
       end
     
-      # we only accept positive integers as ids
-      def id=(id)
-        raise IdError, "#{id} less than 0" if id < 0
-        @id = id 
-      end
-      def_sig :id=, Fixnum
-    
-      def inc(val)
-        self.id += val
+   
+      def inc(val=1)
+        self.class.new(self.id + val)
       end
      
       def to_xml

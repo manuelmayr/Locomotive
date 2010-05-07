@@ -73,6 +73,10 @@ module Locomotive
         LiteralTable.new( lit_list.clone )
       end
     end
+
+    def LiteralTable(values)
+      LiteralTable.new(values)
+    end
      
   end
 

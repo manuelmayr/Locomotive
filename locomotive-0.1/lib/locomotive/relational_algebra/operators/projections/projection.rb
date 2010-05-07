@@ -51,10 +51,8 @@ module Locomotive
       def to_project_list(list)
         case
           when Hash === list then
-            pp "foo1"
             ProjectList.new(list)
           when Array === list then
-            pp "foo2"
             ProjectList.new(list.collect do |item|
                               [item, [item]]
                             end.to_hash)

@@ -2,7 +2,7 @@ module Locomotive
 
   module RelationalAlgebra
 
-    class Eqjoin < Join
+    class EquiJoin < Join
       attr_accessor :item1
       def_sig :item1=, Attribute
       attr_accessor :item2
@@ -39,12 +39,12 @@ module Locomotive
       end
     
       def clone
-        Eqjoin.new(left.clone,right.clone,
+        EquiJoin.new(left.clone,right.clone,
                    item1.clone, item2.clone)
       end
     
       def set(var,plan)
-        Eqjoin.new(
+        EquiJoin.new(
           left.set(var,plan),
           right.set(var,plan),
           item1.clone,

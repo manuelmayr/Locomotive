@@ -13,7 +13,6 @@ module Locomotive
       [:project, :attach,
        :or, :and,
        :aggr,
-       :function,
        :select,
        :difference, :union,
        :cross, :equi_join, :theta_join,
@@ -21,8 +20,16 @@ module Locomotive
        :row_num, :row_id, :rank, :row_rank,
        :serialize_relation].each do |op|
         define_method(op) do |*args|
-          
           ::Locomotive::RelationalAlgebra.const_get(op.classify).new(self, *args)
+        end
+      end
+
+      [:addition, :subtraction,
+       :multiplication, :division].each do |meth|
+        define_method(meth) do |*args|
+          Function.new(self,
+                       ::Locomotive::RelationalAlgebra.const_get(meth.classify).instance,
+                       *args)
         end
       end
     end

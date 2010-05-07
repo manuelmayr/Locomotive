@@ -117,10 +117,11 @@ module Locomotive
       def_sig :surrogates=, SurrogateList
       def_sig :methods=, { Symbol => RelLambda }
     
-      def initialize(plan, payloads, surrogates, methods={})
+      def initialize(plan, payloads, surrogates=nil, methods={})
         self.plan,
         self.payload_items,
-        self.surrogates = plan, payloads, surrogates
+        self.surrogates = plan, PayloadList.new(payloads),
+                          surrogates.nil? ? SurrogateList.new({}) : surrogates
         self.methods = methods
       end
     

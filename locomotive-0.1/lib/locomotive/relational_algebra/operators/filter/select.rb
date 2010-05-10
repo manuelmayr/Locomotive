@@ -17,7 +17,7 @@ module Locomotive
                 "contain all attributes of #{item}."
         end
         
-        unless op.schema[item].member? Bool.instance
+        unless op.schema[item].member? RBool.instance
           raise CorruptedSchema,
                 "#{item}(#{op.schema[item]}) doesn have the type Boolean."
         end

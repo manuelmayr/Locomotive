@@ -18,7 +18,7 @@ module Locomotive
                 "Schema #{op.schema.attributes} does not " \
                 "contain all attributes of #{sort_by.attributes}."
         end
-        self.schema = op.schema + Schema.new({ @res => [Nat.instance] })
+        self.schema = op.schema + Schema.new({ @res => [RNat.instance] })
         super(op)
       end
     

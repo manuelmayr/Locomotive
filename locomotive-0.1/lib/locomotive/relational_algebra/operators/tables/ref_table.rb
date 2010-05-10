@@ -20,9 +20,9 @@ module Locomotive
     
       def get_schema
         mapping =
-          { :integer => Int.instance,
-            :float   => Dec.instance,
-            :string  => Str.instance }
+          { :integer => RInt.instance,
+            :float   => RDec.instance,
+            :string  => RStr.instance }
         id = 0
         Schema.new(
           Hash[*columns.collect do |col|

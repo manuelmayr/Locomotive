@@ -29,6 +29,10 @@ module Locomotive
         self.schema = op1.schema + op2.schema
         super(op1,op2)
       end
+
+      def xml_kind
+        :eqjoin
+      end
     
       def xml_content
         content do

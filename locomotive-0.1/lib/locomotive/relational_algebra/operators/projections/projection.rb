@@ -63,8 +63,6 @@ module Locomotive
     
       def initialize(op, proj_list)
         @proj_list = to_project_list proj_list
-        pp @proj_list
-        pp to_project_list proj_list
         super(op)
       end
     

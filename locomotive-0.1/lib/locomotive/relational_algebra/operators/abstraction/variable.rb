@@ -25,10 +25,10 @@ module Locomotive
         self.id,
         self.items = id, items
         Variable.id_pool << self.id
-        self.schema = Schema.new({ Iter(1) => [Nat.instance],
-                                   Pos(1) => [Nat.instance] }.merge(
+        self.schema = Schema.new({ Iter(1) => [RNat.instance],
+                                   Pos(1) => [RNat.instance] }.merge(
                                      Hash[*items.collect do |it|
-                                             [it, [Nat.instance]]
+                                             [it, [RNat.instance]]
                                            end.flatten_once]) )
       end
     

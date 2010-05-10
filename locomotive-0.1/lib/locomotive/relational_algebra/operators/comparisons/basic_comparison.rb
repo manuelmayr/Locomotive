@@ -11,10 +11,10 @@ module Locomotive
       def_sig :item1=, Attribute
       def_sig :item2=, Attribute
     
-      def initialize(op, res, item1, item2)
+      def initialize(op, res, items)
         self.res,
         self.item1,
-        self.item2 = res, item1, item2
+        self.item2 = res, items[0], items[1]
         super(op)
       end
     
@@ -30,7 +30,7 @@ module Locomotive
                 "contain all attributes of #{item2}."
         end
     
-        self.schema = op.schema + Schema.new({ self.res => [Bool.instance]})
+        self.schema = op.schema + Schema.new({ self.res => [RBool.instance]})
         super(op)
       end
     

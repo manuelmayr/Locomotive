@@ -28,7 +28,7 @@ module Locomotive
                 "Schema #{op.schema.attributes} does not " \
                 "contain all attributes of #{item}."
         end
-        self.schema = Schema.new( { self.item => [Nat.instance] }.merge(
+        self.schema = Schema.new( { self.item => [RNat.instance] }.merge(
                                  Hash[*part_list.collect do |p|
                                          [p, op.schema[p]]
                                        end.flatten_once]))

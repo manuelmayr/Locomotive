@@ -36,6 +36,7 @@ module Locomotive
       public
       delegate :[],
                :to_a,
+               :each,
                :to => :surrogates
     
       def initialize(hash)
@@ -121,7 +122,8 @@ module Locomotive
         self.plan,
         self.payload_items,
         self.surrogates = plan, PayloadList.new(payloads),
-                          surrogates.nil? ? SurrogateList.new({}) : surrogates
+                          surrogates.nil? ? SurrogateList.new({}) :
+                                            SurrogateList.new(surrogates)
         self.methods = methods
       end
     
@@ -146,6 +148,19 @@ module Locomotive
     class Tuple < ResultType; end 
     
     class QueryPlanBundle
+    private
+      def collect_surrogates(surr)
+        lplans = []
+        surr.each do |attr,q_in|
+          lplans << SerializeRelation.new(
+                      Nil.new, q_in.plan,
+                      Iter.new(1), Pos.new(1), q_in.payload_items.to_a)
+          lplans += collect_surrogates(q_in.surrogates)
+        end
+        lplans
+      end
+
+    public 
       include Locomotive::XML
       def_node :query_plan_bundle,
                :query_plan,
@@ -156,7 +171,19 @@ module Locomotive
       attr_accessor :logical_query_plans
       def_sig :logical_query_plans=, [Operator]
     
-      def initialize(lplans)
+      def initialize(op)
+        SerializeRelation.new(
+          Nil.new, op.plan,
+          Iter.new(1), Pos.new(1), op.payload_items.to_a)
+
+        lplans = []
+        lplans <<
+           SerializeRelation.new(
+              Nil.new, op.plan,
+              Iter.new(1), Pos.new(1), op.payload_items.to_a)
+           
+        lplans += collect_surrogates(op.surrogates)
+        
         self.logical_query_plans = lplans
       end
     

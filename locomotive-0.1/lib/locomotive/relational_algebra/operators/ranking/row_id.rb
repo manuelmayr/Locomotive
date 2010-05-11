@@ -4,7 +4,7 @@ module Locomotive
 
     class RowId < Numbering
       def initialize(op, res)
-        super(op,res,nil)
+        super(op,res,{})
       end
     
       def clone

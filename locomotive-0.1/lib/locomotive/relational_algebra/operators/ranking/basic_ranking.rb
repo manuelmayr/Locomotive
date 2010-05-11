@@ -7,8 +7,16 @@ module Locomotive
                   :sort_by
     
       def initialize(op, res, sortby)
-        @res,
-        @sort_by = res, SortList.new(sortby) || SortList.new({}) 
+        @res = res
+        @sort_by = case
+                     when Array === sortby then 
+                       SortList.new( 
+                          sortby.map { |si|
+                            [si, Ascending.instance]
+                          }.to_hash )
+                     when Hash === sortby then 
+                       SortList.new(sortby)
+                   end
         super(op)
       end
     

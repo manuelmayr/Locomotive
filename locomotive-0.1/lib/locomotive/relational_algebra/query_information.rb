@@ -13,6 +13,7 @@ module Locomotive
                :to_a,
                :collect,
                :max,
+               :-,
                :to => :attributes
     
       def initialize(ary)
@@ -37,6 +38,10 @@ module Locomotive
       delegate :[],
                :to_a,
                :each,
+               :keys,
+               :empty?,
+               :first,
+               :delete_if,
                :to => :surrogates
     
       def initialize(hash)
@@ -63,15 +68,16 @@ module Locomotive
         q2_in = itbl_2[c]
       
         # (1)
-        q = RowId.new(
+        q = RowNum.new(
               Union.new(
                 Attach.new(
                   q1_in.plan,
-                  AttachItem.new(Iter(2),RAtomic.new(2, RNat.instance))),
+                  AttachItem.new(Iter.new(2),RAtomic.new(1, RNat.instance))),
                 Attach.new(
                   q2_in.plan,
-                  AttachItem.new(Iter(2),RAtomic.new(1, RNat.instance)))),
-              Item(2))
+                  AttachItem.new(Iter.new(2),RAtomic.new(2, RNat.instance)))),
+              Item.new(2), [],
+              [Iter.new(1), Iter.new(2), Pos.new(1)])
         #(2)
         c_new = c.class.new(c.id + 100)
         q_prime = Project.new(
@@ -79,17 +85,17 @@ module Locomotive
                       q,
                       Project.new(
                         q_0,
-                        ProjectList.new( { Iter(2) => [ Iter(3) ],
-                                           Item(2) => [ Item(3) ],
-                                           c       => [ c_new ] })),
-                      PredicateList.new( Equivalence.new(Iter(2), Iter(3)),
-                                         Equivalence.new(Iter(1), c_new) )),
-                    ProjectList.new( { Item(3) => [ Iter(1) ],
-                                       Pos(1)  => [ Pos(1) ] }.merge(
-                                         { Item(2) => q1_in.surrogates.keys }).merge(
-                                         Hash[*(q1_in.payload_items - q1_in.surrogates.keys).collect do |col|
-                                                  [col, [col]]
-                                                end.flatten_once])))
+                        { Iter.new(2) => [ Iter.new(3) ],
+                          Item.new(2) => [ Item.new(3) ],
+                          c           => [ c_new ] }),
+                      PredicateList.new( Equivalence.new(Iter.new(2), Iter.new(3)),
+                                         Equivalence.new(Iter.new(1), c_new) )),
+                   { Item.new(3) => [ Iter.new(1) ],
+                     Pos.new(1)  => [ Pos.new(1) ] }.merge(
+                     { Item.new(2) => q1_in.surrogates.keys }).merge(
+                       Hash[*(q1_in.payload_items - q1_in.surrogates.keys).collect do |col|
+                         [col, [col]]
+                       end.flatten_once]))
          # (3)          
          itbl_prime = q1_in.surrogates.itapp(q, q2_in.surrogates)
          # (4)
@@ -98,7 +104,7 @@ module Locomotive
                                                SurrogateList.new(itbl_2.delete_if { |k,v| k == c}))
          # (5)
          SurrogateList.new( { c => QueryInformationNode.new(
-                                     q_prime, q1_in.payload_items, itbl_prime) } ) + itbl_2prime
+                                     q_prime, q1_in.payload_items.to_a, itbl_prime.to_a.to_hash) } ) + itbl_2prime
       end
       def_sig :itapp, Operator, SurrogateList
     

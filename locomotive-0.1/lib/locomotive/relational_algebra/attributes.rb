@@ -103,6 +103,7 @@ module Locomotive
     def Item(id)
       Item.new(id)
     end
+
     class NamedAttribute < Attribute
       attr_reader :name
      

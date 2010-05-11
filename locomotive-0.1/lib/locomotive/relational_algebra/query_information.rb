@@ -14,6 +14,7 @@ module Locomotive
                :collect,
                :max,
                :-,
+               :map,
                :to => :attributes
     
       def initialize(ary)

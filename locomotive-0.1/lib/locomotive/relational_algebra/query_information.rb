@@ -107,6 +107,28 @@ module Locomotive
                                      q_prime, q1_in.payload_items.to_a, itbl_prime.to_a.to_hash) } ) + itbl_2prime
       end
       def_sig :itapp, Operator, SurrogateList
+
+      def itsel(q_0)
+        return SurrogateList.new({}) if self.empty? 
+
+        c = self.first.first
+        c_ = self.keys.max.inc
+        cols = self[c].payload_items
+        itbls = self[c].surrogates
+        q = self[c].plan
+
+        # (1)
+        q_ = q.equi_join(q_0.project( c => [c_]), Iter.new(1), c_).
+               project( [Iter.new(1), Pos.new(1)] + cols.to_a )
+
+        itbls_ = itbls.itsel(q_)
+        itbls__ = SurrogateList.new(
+                    self.delete_if { |k,v| k == c }).itsel(q_0)
+
+        SurrogateList.new(
+          { c => QueryInformationNode.new(q_, cols.to_a, itbls_.to_a.to_hash) }.
+          merge( itbls__.to_a.to_hash ) )
+      end
     
       def clone
         SurrogateList.new( surrogates.clone )

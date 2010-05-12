@@ -4,9 +4,9 @@ module Locomotive
 
     class BinOp < Unary
       attr_accessor :res, :item1, :item2
-      def_sig :res=, Attribute
-      def_sig :item1=, Attribute
-      def_sig :item2=, Attribute
+      def_sig :res=, ConstAttribute
+      def_sig :item1=, ConstAttribute
+      def_sig :item2=, ConstAttribute
     
       def initialize(op, res, items)
         self.res,

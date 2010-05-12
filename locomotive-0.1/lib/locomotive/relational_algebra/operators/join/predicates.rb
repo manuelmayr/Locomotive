@@ -11,12 +11,12 @@ module Locomotive
       def first=(first)
         @first = first
       end
-      def_sig :first=, Attribute
+      def_sig :first=, ConstAttribute
     
       def second=(snd)
         @second = snd
       end
-      def_sig :second=, Attribute
+      def_sig :second=, ConstAttribute
     
       public
     

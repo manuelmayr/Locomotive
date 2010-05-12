@@ -10,9 +10,9 @@ module Locomotive
       attr_accessor :iter,
                     :pos,
                     :items
-      def_sig :iter=, Attribute
-      def_sig :pos=, Attribute
-      def_sig :items=, [Attribute]
+      def_sig :iter=, ConstAttribute
+      def_sig :pos=, ConstAttribute
+      def_sig :items=, [ConstAttribute]
     
       def initialize(side,alg,iter,pos,items)
         self.iter,

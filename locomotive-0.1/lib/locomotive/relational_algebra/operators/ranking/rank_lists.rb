@@ -9,7 +9,7 @@ module Locomotive
       private
     
       attr_accessor :sort_list
-      def_sig :sort_list=, { Attribute => SortDirection }
+      def_sig :sort_list=, { ConstAttribute => SortDirection }
       
       public
       delegate :[],

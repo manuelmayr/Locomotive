@@ -15,7 +15,7 @@ module Locomotive
       protected
     
       attr_accessor :schema
-      def_sig :schema=, { Attribute => [RType] }
+      def_sig :schema=, { ConstAttribute => [RType] }
       
       # check if there are duplicates in the schemas
       def duplicates?(schema)
@@ -37,7 +37,7 @@ module Locomotive
       def attributes?(attributes)
         attributes.all? { |attr| self.attributes.member? attr }
       end
-      def_sig :attributes?, [Attribute]
+      def_sig :attributes?, [ConstAttribute]
     
       # merges two schemas, given that there are
       # no duplicate keys
@@ -55,7 +55,7 @@ module Locomotive
       def []=(attr,types)
         schema[attr] = types
       end
-      def_sig :[]=, Attribute, [RType]
+      def_sig :[]=, ConstAttribute, [RType]
     
       def method_missing(mtd, *params, &block)
         if schema.respond_to? mtd

@@ -8,9 +8,9 @@ module Locomotive
       attr_accessor :res,
                     :operator,
                     :items
-      def_sig :res=, Attribute
+      def_sig :res=, ConstAttribute
       def_sig :operator=, Fun
-      def_sig :items=, [Attribute]
+      def_sig :items=, [ConstAttribute]
     
      
       def initialize(op, operator, res, items)

@@ -33,7 +33,7 @@ module Locomotive
       def get_name_mapping
         id = 0
         columns.collect do |col|
-           [ Item(id += 1), NamedAttribute(col.name) ]
+           [ Item(id += 1), Attribute(col.name) ]
          end.to_hash
       end
       

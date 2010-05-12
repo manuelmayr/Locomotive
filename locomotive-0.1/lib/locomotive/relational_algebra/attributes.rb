@@ -1,8 +1,11 @@
 module Locomotive
 
   module RelationalAlgebra
+
+
+    class GenericAttribute; end
   
-    class Attribute
+    class ConstAttribute
       protected
     
       def nth id
@@ -26,7 +29,7 @@ module Locomotive
      
       def initialize(id=0)
         raise AbstractClassError,
-              "#{self.class} is an abstract class" if self.class == Attribute
+              "#{self.class} is an abstract class" if self.class == ConstAttribute
         self.id = id
       end
     
@@ -55,7 +58,7 @@ module Locomotive
         def eql?(other)
           self.==(other)
         end
-        def_sig :eql?, Attribute
+        def_sig :eql?, ConstAttribute
     
         def hash
           # not the best algorithm for calculating a
@@ -75,7 +78,7 @@ module Locomotive
       end
     end
     
-    class Iter < Attribute; end
+    class Iter < ConstAttribute; end
     def Iter(id)
       Iter.new(id)
     end
@@ -87,11 +90,11 @@ module Locomotive
     def Inner(id)
       Inner.new(id)
     end
-    class Pos < Attribute; end
+    class Pos < ConstAttribute; end
     def Pos(id)
       Pos.new(id)
     end
-    class Item < Attribute
+    class Item < ConstAttribute
     
     include Comparable
     def <=>(other)
@@ -104,32 +107,18 @@ module Locomotive
       Item.new(id)
     end
 
-    class NamedAttribute < Attribute
+    class Attribute < GenericAttribute
       attr_reader :name
      
-      def initialize(name, id=0)
-        @name = name
-        super(id)
-      end
-    
-      # we only accept positive integers as ids
-      def id=(id)
-        raise IdError, "#{id} less than 0" if id < 0
-        @id = id 
-      end
-      def_sig :id=, Fixnum
-     
-      def to_xml
-        # Be careful of classes that are nested in modules
-        "#{name}#{nth id}".to_sym
+      def initialize(name)
+        @name = name.to_s
       end
     
       # Equality for attributes is defined over
-      # their class and id
+      # their class their name
       def ==(other)
         self.class == other.class and
-        self.name == other.name and
-        self.id == other.id
+        self.name == other.name
       end
     
       module HashKeys
@@ -145,22 +134,22 @@ module Locomotive
         def hash
           # not the best algorithm for calculating a
           # hash but it works quite well
-          self.class.object_id + id.object_id + name.object_id
+          self.class.object_id + name.object_id
         end
       end
       include HashKeys
     
       def inspect
-        "<#{self.class.to_s.split('::').last} name:#{name} id:#{id}>"
+        "<#{self.class.to_s.split('::').last} name:#{name}>"
       end
     
       def clone
         # an attributes contains only an id
-        NamedAttribute.new(name,id)
+        Attribute.new(name)
       end
     end
-    def NamedAttribute(name, id=0)
-      NamedAttribute.new(name,id)
+    def Attribute(name)
+      Attribute.new(name)
     end
   
   end

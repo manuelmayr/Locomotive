@@ -7,7 +7,7 @@ module Locomotive
       def_node :column
     
       attr_accessor :attribute
-      def_sig :attribute=, Attribute
+      def_sig :attribute=, ConstAttribute
       attr_accessor :atom
       def_sig :atom=, RAtomic
     

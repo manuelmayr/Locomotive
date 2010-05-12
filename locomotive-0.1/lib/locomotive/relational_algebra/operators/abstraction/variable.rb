@@ -17,7 +17,7 @@ module Locomotive
     
       attr_accessor :id, :items
       def_sig :id=, Integer
-      def_sig :items=, [Attribute]
+      def_sig :items=, [GenericAttribute]
       def_node :variable
     
     

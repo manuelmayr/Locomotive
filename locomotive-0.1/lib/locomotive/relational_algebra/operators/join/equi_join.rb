@@ -4,9 +4,9 @@ module Locomotive
 
     class EquiJoin < Join
       attr_accessor :item1
-      def_sig :item1=, Attribute
+      def_sig :item1=, ConstAttribute
       attr_accessor :item2
-      def_sig :item2=, Attribute
+      def_sig :item2=, ConstAttribute
     
     
       def initialize(op1,op2,it1,it2)

@@ -8,9 +8,9 @@ module Locomotive
       attr_accessor :res,
                     :type,
                     :item 
-      def_sig :res=, Attribute
+      def_sig :res=, ConstAttribute
       def_sig :type=, RType
-      def_sig :item=, Attribute
+      def_sig :item=, ConstAttribute
     
       def initialize(op, res, item, type)
         self.res,

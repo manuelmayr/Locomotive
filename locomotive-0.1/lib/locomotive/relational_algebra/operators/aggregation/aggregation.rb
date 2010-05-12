@@ -7,8 +7,8 @@ module Locomotive
     
       attr_accessor :item, :part_list, :aggr_kind
       def_sig :aggr_kind=, AggrFun
-      def_sig :part_list=, [Attribute]
-      def_sig :item=, Attribute
+      def_sig :part_list=, [ConstAttribute]
+      def_sig :item=, ConstAttribute
     
       def initialize(op, aggr_kind, item, part)
         self.item = item

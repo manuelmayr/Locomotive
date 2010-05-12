@@ -6,7 +6,7 @@ module Locomotive
       def_node :column
       
       attr_accessor :part
-      def_sig :part=, [Attribute]
+      def_sig :part=, [ConstAttribute]
     
       def initialize(op, res, part, sortby)
         self.part = part

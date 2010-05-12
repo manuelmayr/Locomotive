@@ -9,7 +9,7 @@ module Locomotive
       private
     
       attr_accessor :project_list
-      def_sig :project_list=, { Attribute => [Attribute] }
+      def_sig :project_list=, { ConstAttribute => [ConstAttribute] }
       
       public
       delegate :[],
@@ -56,6 +56,10 @@ module Locomotive
             ProjectList.new(list.collect do |item|
                               [item, [item]]
                             end.to_hash)
+          when ProjectList === list then
+            list
+          else raise ArgumentError,
+                     "list does not seem to be a projectlist"
         end
       end
     

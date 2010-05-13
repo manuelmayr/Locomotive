@@ -233,7 +233,7 @@ module Locomotive
 
         def clone
           ColumnStructure.new(
-            *entries.map { |e| e.clone })
+            entries.map { |e| e.clone })
         end
 
         def items

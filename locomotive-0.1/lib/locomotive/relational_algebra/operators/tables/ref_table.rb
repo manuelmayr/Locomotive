@@ -4,19 +4,10 @@ module Locomotive
 
     class RefTbl < Leaf
       def_node :table, :properties, :keys, :key
+      attr_reader :name,
+                  :attributes
     
       private
-    
-      def columns
-        @columns ||= engine.columns(name,
-                                     "#{name} columns")
-      end
-    
-      def keys
-        @keys = columns.select do |col|
-                  col.primary
-                end
-      end
     
       def get_schema
         mapping =
@@ -25,36 +16,29 @@ module Locomotive
             :string  => RStr.instance }
         id = 0
         Schema.new(
-          Hash[*columns.collect do |col|
-                  [Item(id += 1), [mapping[col.type]]]
+          Hash[*@attributes.collect do |attr, ty|
+                  [Item.new(id += 1), [ty]]
                 end.flatten_once])
       end
     
       def get_name_mapping
         id = 0
-        columns.collect do |col|
-           [ Item(id += 1), Attribute(col.name) ]
-         end.to_hash
+        @attributes.collect do |attr, ty|
+           [ Item.new(id += 1), attr.clone ]
+        end.to_hash
       end
       
       public
     
-      cattr_accessor :engine
-      attr_reader :engine
       attr_accessor :name
       def_sig :name=, String
       attr_reader :name_mapping
     
-      def initialize(name, engine = nil)
-        @engine = engine || Table.engine
+      def initialize(name, attributes)
         @name = name
+        @attributes = attributes
         @name_mapping = get_name_mapping
         self.schema = get_schema
-      end
-    
-      def reset
-        @columns = nil
-        @keys = nil
       end
     
       def xml_kind
@@ -72,7 +56,7 @@ module Locomotive
       end
     
       def clone
-        RefTbl.new(name.clone, engine)
+        RefTbl.new(name.clone)
       end
     end
     

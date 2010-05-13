@@ -18,7 +18,6 @@ module Locomotive
                :keys,
                :empty?,
                :first,
-               :delete_if,
                :to => :surrogates
     
       def initialize(hash)
@@ -27,6 +26,10 @@ module Locomotive
     
       def +(sur)
         SurrogateList.new(surrogates.merge(sur.surrogates))
+      end
+
+      def delete_if(&lambda)
+        self.clone.surrogates.delete_if(&lambda)
       end
     
       def itapp(q_0, itbl_2)
@@ -97,7 +100,7 @@ module Locomotive
 
         itbls_ = itbls.itsel(q_)
         itbls__ = SurrogateList.new(
-                    self.clone.delete_if { |k,v| k == c }).itsel(q_0)
+                    self.delete_if { |k,v| k == c }).itsel(q_0)
 
         SurrogateList.new(
           { c => QueryInformationNode.new(q_, cols, itbls_) }.
@@ -121,6 +124,10 @@ module Locomotive
         @type   = type
       end
 
+      def items
+        [offset]
+      end
+
       def clone
         OffsetType.new(offset.clone,
                        type.clone)
@@ -128,12 +135,16 @@ module Locomotive
     end
 
     class AttributeColumnStructure < ColumnStructureEntry
-      attr_reader :attribute
+      attr_reader :attribute,
                   :column_structure
 
-      def initialize(attr, cs)
-        @attribute = attr
+      def initialize(attribute, cs)
+        @attribute = attribute
         @column_structure = cs
+      end
+
+      def items
+        column_structure.items
       end
 
       def clone
@@ -169,15 +180,15 @@ module Locomotive
           end
         end
 
-        def search_by_attribute(attr)
+        def search_by_attribute(attribute)
           entries.select do |entry|
-            e.attribute == attribute
+            entry.attribute == attribute
           end[0]
         end
 
         def search_by_item(offset)
           entries.select do |entry|
-            e.offset == offset
+            entry.offset == offset
           end[0]
         end
 
@@ -185,6 +196,8 @@ module Locomotive
         attr_reader :entries
 
         delegate :first,
+                 :map,
+                 :collect,
                  :to => :entries
 
         def initialize(entries)
@@ -200,11 +213,11 @@ module Locomotive
               entries[attribute_index]
             when Symbol === attribute_index then 
               attribute = Attribute.new(attribute_index)
-              search_by_attribute(attribute)
+              search_by_attribute(attribute).column_structure
             when Attribute === attribute_index then
-              search_by_attribute(attribute_index)
+              search_by_attribute(attribute_index).column_structure
             when Item === attribute_index then
-              search_by_item(attribute_index)
+              ColumnStructure.new([search_by_item(attribute_index)])
             else 
               raise ArgumentError, "[] in ColumnStructure"
           end
@@ -225,12 +238,7 @@ module Locomotive
 
         def items
           entries.map do |entry|
-            case
-              when OffsetType === entry then
-                entry.offset
-              when AttributeColumnStructure === entry then
-                entry.column_structure.items
-            end
+            entry.items
           end.flatten
         end
 

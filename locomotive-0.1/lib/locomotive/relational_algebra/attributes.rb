@@ -5,7 +5,7 @@ module Locomotive
 
     class GenericAttribute; end
   
-    class ConstAttribute
+    class ConstAttribute < GenericAttribute
       protected
     
       def nth id
@@ -138,6 +138,12 @@ module Locomotive
         end
       end
       include HashKeys
+
+      def to_xml
+        # Be careful of classes that are nested in modules
+        name
+      end
+ 
     
       def inspect
         "<#{self.class.to_s.split('::').last} name:#{name}>"

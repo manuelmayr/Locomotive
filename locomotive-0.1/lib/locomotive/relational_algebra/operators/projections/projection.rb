@@ -9,7 +9,7 @@ module Locomotive
       private
     
       attr_accessor :project_list
-      def_sig :project_list=, { ConstAttribute => [ConstAttribute] }
+      def_sig :project_list=, { GenericAttribute => [ConstAttribute] }
       
       public
       delegate :[],

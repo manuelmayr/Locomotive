@@ -3,9 +3,10 @@ module Locomotive
   module RelationalAlgebra
 
     class RefTbl < Leaf
-      def_node :table, :properties, :keys, :key
+      def_node :table, :properties, :_keys_, :key
       attr_reader :name,
-                  :attributes
+                  :attributes,
+                  :keys
     
       private
     
@@ -34,9 +35,10 @@ module Locomotive
       def_sig :name=, String
       attr_reader :name_mapping
     
-      def initialize(name, attributes)
+      def initialize(name, attributes, keys)
         @name = name
         @attributes = attributes
+        @keys = keys
         @name_mapping = get_name_mapping
         self.schema = get_schema
       end
@@ -46,13 +48,21 @@ module Locomotive
       end
     
       def xml_content
+        [properties do
+          _keys_ do
+            pos = -1
+            keys.map do |k|
+              key :name => k.to_xml, :position => pos += 1
+            end.join
+          end
+        end,
         content do
           table :name => name do 
             name_mapping.collect do |new,old|
               column :name => new.to_xml, :tname => old.to_xml, :type => schema[new].first.to_xml
             end.join
           end
-        end
+        end].join
       end
     
       def clone

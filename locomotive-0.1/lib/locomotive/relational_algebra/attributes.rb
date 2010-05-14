@@ -96,11 +96,15 @@ module Locomotive
     end
     class Item < ConstAttribute
     
-    include Comparable
-    def <=>(other)
-      self.id <=> other.id
-    end
-    def_sig :<=>, Item
+      include Comparable
+      def <=>(other)
+        self.id <=> other.id
+      end
+      def_sig :<=>, Item
+  
+      def dec!(id)
+        self.id -= id 
+      end
     
     end
     def Item(id)

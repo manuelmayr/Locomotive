@@ -110,6 +110,20 @@ module Locomotive
       def clone
         SurrogateList.new( surrogates.clone )
       end
+
+      def filter_and_adapt(items)
+        item_min = items.min
+        # we are modifying the structure itself
+        # so we have to clone it (sideeffect)
+        surr_new = self.clone
+        surr_new.delete_if do |it, itbl|
+          !items.member?(it)
+        end
+
+       # adapt the keys
+       surr_new.keys.each { |k| k.dec!(item_min.id - 1) }
+       surr_new
+     end
     end
 
     class ColumnStructureEntry
@@ -242,10 +256,17 @@ module Locomotive
           end.flatten
         end
 
-        def max
-          self.items.max
+        def adapt
+          item_min =  self.items.min
+          # we are modifying the structure
+          # itself (sideeffect) so we have to
+          # do a clone of it
+          cs_new = self.clone
+          cs_new.items.each do |it|
+            it.dec!(item_min.id - 1)
+          end
+          cs_new
         end
-      
     end
     
     class QueryInformationNode

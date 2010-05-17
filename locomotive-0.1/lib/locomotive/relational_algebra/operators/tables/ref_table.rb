@@ -66,7 +66,7 @@ module Locomotive
       end
     
       def clone
-        RefTbl.new(name.clone)
+        RefTbl.new(name.clone, attributes.clone, keys.clone)
       end
     end
     

@@ -31,7 +31,8 @@ module Locomotive
       def set(var,plan)
         ThetaJoin.new(
           left.set(var,plan),
-          right.set(var,plan))
+          right.set(var,plan),
+          predicate_list.clone)
       end
     end
 

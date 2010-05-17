@@ -5,14 +5,16 @@ module Locomotive
     class Aggr < Unary
       def_node :column, :aggregate
     
-      attr_accessor :item, :part_list, :aggr_kind
+      attr_accessor :item, :over, :part_list, :aggr_kind
       def_sig :aggr_kind=, AggrFun
       def_sig :part_list=, [ConstAttribute]
       def_sig :item=, ConstAttribute
+      def_sig :over=, [ConstAttribute]
     
-      def initialize(op, aggr_kind, item, part)
+      def initialize(op, aggr_kind, item, over, part)
         self.item = item
         self.aggr_kind = aggr_kind
+        self.over = over
         self.part_list = part
         super(op)
       end
@@ -23,7 +25,7 @@ module Locomotive
                 "Schema #{op.schema.attributes} does not " \
                 "contain all attributes of #{part_list}."
         end
-        unless op.schema.attributes?([item])
+        unless op.schema.attributes?(over)
           raise CorruptedSchema,
                 "Schema #{op.schema.attributes} does not " \
                 "contain all attributes of #{item}."
@@ -42,7 +44,10 @@ module Locomotive
             column :name => part.to_xml, :function => :partition, :new => false
           end.join + 
           (aggregate :kind => aggr_kind.to_xml do
-            column :name => item.to_xml, :new => true
+            ([column(:name => item.to_xml, :new => true)] + 
+             over.map do |c|
+               column(:name => c.to_xml, :new => false, :function => :item)
+             end).join
           end)
         end
       end
@@ -51,6 +56,7 @@ module Locomotive
         Aggr.new(
           child.clone,
           aggr_kind.clone,
+          over.clone,
           item.clone,
           part_list.clone)
       end
@@ -60,6 +66,7 @@ module Locomotive
           child.set(var,plan),
           aggr_kind.clone,
           item.clone,
+          over.clone,
           part_list.clone)
       end
     end

@@ -15,6 +15,8 @@ module Locomotive
     end
     
     class Count < AggrFun; end
+    class Max < AggrFun; end
+    class Min < AggrFun; end
 
   end
 

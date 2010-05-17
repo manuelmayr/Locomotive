@@ -9,10 +9,10 @@ module Locomotive
       end
     
       def left_and_right(op1,op2)
-        self.schema = Schema.new( { Iter(1) => [RNat.instance],
-                                    Pos(1) => [RNat.instance],
+        self.schema = Schema.new( { Iter.new(1) => [RNat.type],
+                                    Pos.new(1) => [RNat.type],
                                     # this is a dummy node
-                                    Item(1) => [RNat.instance] } )
+                                    Item.new(1) => [RNat.type] } )
         super(op1,op2)
       end
       def_sig :left_and_right, Variable, Operator

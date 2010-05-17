@@ -3,11 +3,23 @@ module Locomotive
   module RelationalAlgebra
 
     class ThetaJoin < Join
+      private
+
+      def to_predicate_list(predicates)
+        case
+          when Array === predicates then 
+            PredicateList.new(*predicates)
+          when PredicateList === predicates then
+            predicates
+        end
+      end
+
+      public
       attr_accessor :predicate_list
       def_sig :predicate_list=, PredicateList
     
       def initialize(op1, op2, pred_list)
-        self.predicate_list = pred_list
+        self.predicate_list = to_predicate_list pred_list
         super(op1,op2)
       end
     

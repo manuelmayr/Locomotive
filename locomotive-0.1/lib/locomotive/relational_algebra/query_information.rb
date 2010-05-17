@@ -51,45 +51,41 @@ module Locomotive
     
         q1_in = self[c]
         q2_in = itbl_2[c]
+
+        q1, q2 = q1_in.plan, q2_in.plan
+        cols_q1, itbls_q1 = q1_in.column_structure, q1_in.surrogates
+        iter_, iter__, item_, item__ = Iter.new(2), Iter.new(3),
+                                       Item.new(2), Item.new(3)
       
         # (1)
-        q = RowNum.new(
-              Union.new(
-                Attach.new(
-                  q1_in.plan,
-                  AttachItem.new(Iter.new(2),RAtomic.new(1, RNat.instance))),
-                Attach.new(
-                  q2_in.plan,
-                  AttachItem.new(Iter.new(2),RAtomic.new(2, RNat.instance)))),
-              Item.new(2), [],
-              [Iter.new(1), Iter.new(2), Pos.new(1)])
+        q = q1.attach(AttachItem.new(iter_, RAtomic.new(1, RNat.type))).
+               union(q2.attach(AttachItem.new(iter_, RAtomic.new(2, RNat.type)))).
+               row_num(item_, [], [Iter.new(1), iter_, Pos.new(1)])
+        
         #(2)
-        c_new = c.class.new(c.id + 100)
-        q_prime = Project.new(
-                    ThetaJoin.new(
-                      q,
-                      Project.new(
-                        q_0,
-                        { Iter.new(2) => [ Iter.new(3) ],
-                          Item.new(2) => [ Item.new(3) ],
-                          c           => [ c_new ] }),
-                      PredicateList.new( Equivalence.new(Iter.new(2), Iter.new(3)),
-                                         Equivalence.new(Iter.new(1), c_new) )),
-                   { Item.new(3) => [ Iter.new(1) ],
-                     Pos.new(1)  => [ Pos.new(1) ] }.merge(
-                     { Item.new(2) => q1_in.surrogates.keys }).merge(
-                       Hash[*(q1_in.column_structure - q1_in.surrogates.keys).items.collect do |col|
-                         [col, [col]]
-                       end.flatten_once]))
+        c_new = (self.keys + itbl_2.keys).max.inc(100)
+
+        q_ = q_0.project( iter_ => [iter__],
+                          item_ => [item__],
+                          c     => [c_new] ).
+                 theta_join(q, [Equivalence.new(iter__, iter_),
+                                Equivalence.new(c_new, Iter.new(1))] ).
+                 project( { item__ => [Iter.new(1)],
+                            Pos.new(1) => [Pos.new(1)] }.
+                            merge(
+                              (cols_q1 - itbls_q1.keys).items.collect do |col|
+                                [col, [col]]
+                              end.to_hash) )
+
          # (3)          
-         itbl_prime = q1_in.surrogates.itapp(q, q2_in.surrogates)
+         itbl_ = q1_in.surrogates.itapp(q, q2_in.surrogates)
          # (4)
-         itbl_2prime = SurrogateList.new(
-                         self.delete_if { |k,v| k == c}).itapp(q_0,
-                                               SurrogateList.new(itbl_2.delete_if { |k,v| k == c}))
+         itbl__ = SurrogateList.new(
+                         self.clone.delete_if { |k,v| k == c}).itapp(q_0,
+                                               SurrogateList.new(itbl_2.clone.delete_if { |k,v| k == c}))
          # (5)
          SurrogateList.new( { c => QueryInformationNode.new(
-                                     q_prime, q1_in.column_structure, itbl_prime) } ) + itbl_2prime
+                                     q_, q1_in.column_structure, itbl_) } ) + itbl__
       end
       def_sig :itapp, Operator, SurrogateList
 
@@ -105,7 +101,7 @@ module Locomotive
 
         itbls_ = itbls.itsel(q_)
         itbls__ = SurrogateList.new(
-                    self.delete_if { |k,v| k == c }).itsel(q_0)
+                    self.clone.delete_if { |k,v| k == c }).itsel(q_0)
 
         SurrogateList.new(
           { c => QueryInformationNode.new(q_, cols, itbls_) }.

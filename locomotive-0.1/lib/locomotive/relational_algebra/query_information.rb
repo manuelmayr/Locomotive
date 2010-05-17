@@ -23,6 +23,11 @@ module Locomotive
       def initialize(hash)
         self.surrogates = hash   
       end
+
+      def map(&block)
+        SurrogateList.new(
+          surrogates.map(&block).to_hash)
+      end
     
       def +(sur)
         SurrogateList.new(surrogates.merge(sur.surrogates))
@@ -105,6 +110,14 @@ module Locomotive
         SurrogateList.new(
           { c => QueryInformationNode.new(q_, cols, itbls_) }.
           merge( itbls__.to_a.to_hash ) )
+      end
+
+      def set(var, plan)
+        self.map do |item, itbl|
+          [item,QueryInformationNode.new(itbl.plan.set(var, plan), 
+                                         itbl.column_structure,
+                                         itbl.surrogates.set(var,plan))]
+        end
       end
     
       def clone

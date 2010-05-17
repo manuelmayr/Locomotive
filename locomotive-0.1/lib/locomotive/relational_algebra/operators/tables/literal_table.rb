@@ -51,12 +51,24 @@ module Locomotive
         self.schema = Schema.new(s)
         @lit_list = llist
       end
+
+      def to_literal_list(llist)
+        case
+          when Hash === llist then
+            LiteralList.new(llist)
+          when LiteralList === llist then
+            llist
+        end
+      end
+      private :to_literal_list
+
+
       def_sig :lit_list=, LiteralList
       private :lit_list
 
     
       def initialize(llist)
-        self.lit_list = LiteralList.new(llist)
+        self.lit_list = to_literal_list llist
       end
     
       def xml_kind

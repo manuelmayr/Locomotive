@@ -3,20 +3,31 @@ module Locomotive
   module RelationalAlgebra
 
     class Numbering < Unary
+      private 
+        def to_sort_by(sortby)
+          case
+            when SortList === sortby then
+              sortby
+            when Array === sortby then 
+              SortList.new( 
+                 sortby.map { |si|
+                   [si, Ascending.instance]
+                 }.to_hash )
+            when Hash === sortby then 
+              SortList.new(sortby)
+            when sortby.nil? then
+              SortList.new({})
+          end
+        end
+
+      public
       attr_reader :res,
                   :sort_by
+
     
       def initialize(op, res, sortby)
         @res = res
-        @sort_by = case
-                     when Array === sortby then 
-                       SortList.new( 
-                          sortby.map { |si|
-                            [si, Ascending.instance]
-                          }.to_hash )
-                     when Hash === sortby then 
-                       SortList.new(sortby)
-                   end
+        @sort_by = to_sort_by sortby
         super(op)
       end
     

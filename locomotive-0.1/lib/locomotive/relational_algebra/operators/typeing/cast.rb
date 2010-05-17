@@ -49,8 +49,8 @@ module Locomotive
         Cast.new(
           child.set(var,plan),
           res.clone,
-          type.clone,
-          item.clone)
+          item.clone,
+          type.clone)
       end
     end
 

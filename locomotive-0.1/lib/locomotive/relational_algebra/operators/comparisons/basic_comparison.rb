@@ -37,16 +37,16 @@ module Locomotive
       def clone
         self.class.new(child.clone,
                        res.clone,
-                       item1.clone,
-                       item2.clone)
+                       [item1.clone,
+                        item2.clone])
       end
     
       def set(var,plan)
         self.class.new(
           child.set(var,plan),
           res.clone,
-          item1.clone,
-          item2.clone)
+          [item1.clone,
+          item2.clone])
       end
     
       def xml_content

@@ -4,14 +4,14 @@ module Locomotive
 
     class Variable < Leaf
     
-      @id_pool = []
       class << self
         attr_accessor :id_pool
         
-        def new_variable
+        def new_variable(*items)
+          Variable.id_pool ||= [0]
           new_id = Variable.id_pool.max + 1
           Variable.id_pool << new_id
-          Variable.new(new_id)
+          Variable.new(new_id, *items)
         end
       end
     
@@ -25,8 +25,8 @@ module Locomotive
         self.id,
         self.items = id, items
         Variable.id_pool << self.id
-        self.schema = Schema.new({ Iter(1) => [RNat.instance],
-                                   Pos(1) => [RNat.instance] }.merge(
+        self.schema = Schema.new({ Iter.new(1) => [RNat.type],
+                                   Pos.new(1) => [RNat.type] }.merge(
                                      Hash[*items.collect do |it|
                                              [it, [RNat.instance]]
                                            end.flatten_once]) )

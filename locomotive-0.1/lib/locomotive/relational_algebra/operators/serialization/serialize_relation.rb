@@ -62,26 +62,13 @@ module Locomotive
       end
     
       def serialize
-        self.traverse do |op|
-          op.ann_vis = false
-        end
-
         xml_id = 0
-        self.traverse do |op|
-          next if op.ann_vis 
-          op.ann_xml_id = xml_id += 1
-          op.ann_vis = true
-        end
-    
         xml_list = []
     
-        self.traverse do |op|
-          op.ann_vis = false
-        end
-
         self.traverse_strategy = Locomotive::AstHelpers::PostOrderTraverse
         self.traverse do |op|
           next if op.ann_vis
+          op.ann_xml_id = xml_id += 1
           xml_list << op.to_xml
           op.ann_vis = true
         end

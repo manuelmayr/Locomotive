@@ -229,6 +229,12 @@ module Locomotive
                      end
         end
 
+        def add(entries)
+          entries_ = entries
+          entries_ = entries.entries if ColumnStructure === entries
+          ColumnStructure.new(self.entries + entries)
+        end
+
         def [](attribute_index)
           # just look on the surface if you find the right attribute
           case 

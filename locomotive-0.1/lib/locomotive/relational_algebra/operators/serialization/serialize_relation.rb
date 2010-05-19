@@ -72,6 +72,10 @@ module Locomotive
           xml_list << op.to_xml
           op.ann_vis = true
         end
+
+        self.traverse do |op|
+          op.ann_vis = false
+        end
     
         logical_query_plan :unique_names => true do
           xml_list.join

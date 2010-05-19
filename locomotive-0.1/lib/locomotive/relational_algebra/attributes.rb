@@ -101,6 +101,10 @@ module Locomotive
         self.id <=> other.id
       end
       def_sig :<=>, Item
+
+      def inc!(id)
+        self.id += id
+      end
   
       def dec!(id)
         self.id -= id 

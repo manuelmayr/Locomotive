@@ -253,10 +253,16 @@ module Locomotive
         end
 
         def -(array)
-          # FIXME support for attributes
           ColumnStructure.new(
             entries.clone.delete_if do |entry|
-              array.member? entry.offset
+              case
+                when AttributeColumnStructure === entry then
+                  array.member? entry.attribute
+                when OffsetType === entry
+                  array.member? entry.offset
+                else
+                  raise StandardError, "Not a cs-entry"
+              end
             end)
         end
 

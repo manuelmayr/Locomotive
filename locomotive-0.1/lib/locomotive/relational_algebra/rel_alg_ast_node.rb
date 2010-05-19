@@ -35,7 +35,7 @@ module Locomotive
         end
       end
 
-      [:max, :min, :count].each do |meth|
+      [:max, :min, :count, :avg, :sum].each do |meth|
         define_method(meth) do |*args|
           Aggr.new(self,
                    ::Locomotive::RelationalAlgebra.const_get(meth.classify).instance,

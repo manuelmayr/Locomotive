@@ -95,7 +95,7 @@ module Locomotive
       Pos.new(id)
     end
     class Item < ConstAttribute
-    
+
       include Comparable
       def <=>(other)
         self.id <=> other.id

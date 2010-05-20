@@ -57,6 +57,9 @@ module Locomotive
       def_sig :+, Schema
     
       def []=(attr,types)
+        raise Duplicates, 
+               "#{attr.inspect} results in duplicates " \
+               "in schema #{self.attributes}" unless self[attr].nil?
         schema[attr] = types
       end
       def_sig :[]=, ConstAttribute, [RType]
@@ -68,6 +71,10 @@ module Locomotive
                 :type => types.collect { |ty| ty.to_xml }.join(",")
           end.join
         end
+      end
+
+      def inspect
+        "<Schema [#{schema.map { |s| s.inspect }.join(", ")}]>"
       end
     
       def clone

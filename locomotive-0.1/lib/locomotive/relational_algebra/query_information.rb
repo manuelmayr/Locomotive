@@ -257,7 +257,7 @@ module Locomotive
             entries.clone.delete_if do |entry|
               case
                 when AttributeColumnStructure === entry then
-                  array.member? entry.attribute
+                  array.any? { |a| entry.items.member? a }
                 when OffsetType === entry
                   array.member? entry.offset
                 else

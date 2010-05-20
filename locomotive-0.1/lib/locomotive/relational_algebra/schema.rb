@@ -25,6 +25,10 @@ module Locomotive
       def_sig :duplicates?, Schema
     
       public
+
+      delegate :[],
+               :each,
+               :to => :schema
     
       def initialize(hash)
         self.schema = hash
@@ -56,14 +60,6 @@ module Locomotive
         schema[attr] = types
       end
       def_sig :[]=, ConstAttribute, [RType]
-    
-      def method_missing(mtd, *params, &block)
-        if schema.respond_to? mtd
-          schema.send(mtd, *params, &block)
-        else
-          super.method_missing(mtd, *params, &block)
-        end
-      end
     
       def to_xml
         _schema_ do

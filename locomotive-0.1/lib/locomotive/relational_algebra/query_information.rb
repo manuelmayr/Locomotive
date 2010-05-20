@@ -117,7 +117,7 @@ module Locomotive
       end
     
       def clone
-        SurrogateList.new( surrogates.clone )
+        SurrogateList.new( surrogates.map { |k,v| [k.clone,v.clone] }.to_hash )
       end
 
       def filter_and_adapt(items)

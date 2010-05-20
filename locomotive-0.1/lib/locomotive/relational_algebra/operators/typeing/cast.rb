@@ -41,8 +41,8 @@ module Locomotive
         Cast.new(
           child.clone,
           res.clone,
-          type.clone,
-          item.clone)
+          item.clone,
+          type.clone)
       end
     
       def set(var,plan)

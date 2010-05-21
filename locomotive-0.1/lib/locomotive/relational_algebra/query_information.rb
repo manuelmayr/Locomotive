@@ -71,7 +71,8 @@ module Locomotive
                  theta_join(q, [Equivalence.new(iter__, iter_),
                                 Equivalence.new(c_new, Iter.new(1))] ).
                  project( { item__ => [Iter.new(1)],
-                            Pos.new(1) => [Pos.new(1)] }.
+                            Pos.new(1) => [Pos.new(1)],
+                            item_ => itbls_q1.keys  }.
                             merge(
                               (cols_q1 - itbls_q1.keys).items.collect do |col|
                                 [col, [col]]
@@ -81,11 +82,11 @@ module Locomotive
          itbl_ = q1_in.surrogates.itapp(q, q2_in.surrogates)
          # (4)
          itbl__ = SurrogateList.new(
-                         self.clone.delete_if { |k,v| k == c}).itapp(q_0,
-                                               SurrogateList.new(itbl_2.clone.delete_if { |k,v| k == c}))
+                         self.delete_if { |k,v| k == c}).itapp(q_0,
+                                               SurrogateList.new(itbl_2.delete_if { |k,v| k == c}))
          # (5)
          SurrogateList.new( { c => QueryInformationNode.new(
-                                     q_, q1_in.column_structure, itbl_) } ) + itbl__
+                                     q_, cols_q1, itbl_) } ) + itbl__
       end
       def_sig :itapp, Operator, SurrogateList
 
@@ -333,6 +334,10 @@ module Locomotive
         self.column_structure,
         self.surrogates = plan, to_cs_structure(cs_structure),
                           to_surrogates(surrogates)
+        unless self.plan.schema.attributes?(self.column_structure.items) then 
+          raise StandardError, "Queryplan doesn't contain all attributes of" \
+                               " #{self.column_structure.items.inspect}"
+        end
         self.methods = methods
       end
     

@@ -20,6 +20,7 @@ module Locomotive
        :less_than, :less_equal_than,
        :row_num, :row_id, :rank, :row_rank,
        :cast,
+       :error,
        :serialize_relation].each do |op|
         define_method(op) do |*args|
           ::Locomotive::RelationalAlgebra.const_get(op.classify).new(self, *args)

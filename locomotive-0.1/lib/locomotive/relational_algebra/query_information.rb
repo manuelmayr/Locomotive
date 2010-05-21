@@ -291,6 +291,40 @@ module Locomotive
         end
     end
     
+    class SideEffects
+      private 
+
+      def to_side_effect(side)
+        case
+          when Array === side then 
+            side
+          when SideEffects === side then 
+            side.side
+          when Operator === side then
+            [side]
+        end
+      end
+
+      public 
+
+      attr_reader :side
+
+      def initialize(side)
+        @side = to_side_effect side
+      end
+
+      def add(side_effect)
+        SideEffects.new(
+          @side.clone + to_side_effect(side_effect))
+      end
+
+      def plan
+        @side.reduce(Nil.new) do |s1, s2|
+          s1.error(s2, Item.new(1))
+        end
+      end
+    end
+ 
     class QueryInformationNode
       private 
 
@@ -318,22 +352,40 @@ module Locomotive
         end
       end
 
+      def to_side_effects(side_effects)
+        case
+          when NilClass === side_effects then
+            SideEffects.new([])
+          when Array === side_effects then
+            SideEffects.new(side_effects)
+          when SideEffects == side_effects then
+            side_effects
+          else raise ArgumentError,
+                     "side_effects doesn't seem to be a side_effect"
+        end
+      end
+
       public
       attr_accessor :plan,
                     :column_structure,
                     :surrogates,
+                    :side_effects,
                     :methods
     
       def_sig :plan=, Operator
       def_sig :column_structure=, ColumnStructure
       def_sig :surrogates=, SurrogateList
+      def_sig :side_effects=, SideEffects
       def_sig :methods=, { Symbol => RelLambda }
     
-      def initialize(plan, cs_structure, surrogates=nil, methods={})
+      def initialize(plan, cs_structure, surrogates=nil, side_effects=nil, methods={})
         self.plan,
         self.column_structure,
-        self.surrogates = plan, to_cs_structure(cs_structure),
-                          to_surrogates(surrogates)
+        self.surrogates,
+        self.side_effects = plan, to_cs_structure(cs_structure),
+                            to_surrogates(surrogates),
+                            to_side_effects(side_effects)
+        
         unless self.plan.schema.attributes?(self.column_structure.items) then 
           raise StandardError, "Queryplan doesn't contain all attributes of" \
                                " #{self.column_structure.items.inspect}"
@@ -360,14 +412,15 @@ module Locomotive
       end
     end
     class Tuple < ResultType; end 
-    
+
+   
     class QueryPlanBundle
     private
       def collect_surrogates(surr)
         lplans = []
         surr.each do |attr,q_in|
           lplans << SerializeRelation.new(
-                      Nil.new, q_in.plan,
+                      q_in.side_effects.plan, q_in.plan,
                       Iter.new(1), Pos.new(1), q_in.column_structure.items)
           lplans += collect_surrogates(q_in.surrogates)
         end
@@ -387,13 +440,13 @@ module Locomotive
     
       def initialize(op)
         SerializeRelation.new(
-          Nil.new, op.plan,
+          op.side_effects.plan, op.plan,
           Iter.new(1), Pos.new(1), op.column_structure.items)
 
         lplans = []
         lplans <<
            SerializeRelation.new(
-              Nil.new, op.plan,
+              op.side_effects.plan, op.plan,
               Iter.new(1), Pos.new(1), op.column_structure.items)
            
         lplans += collect_surrogates(op.surrogates)

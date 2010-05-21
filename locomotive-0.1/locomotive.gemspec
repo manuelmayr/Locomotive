@@ -80,6 +80,8 @@ Gem::Specification.new do |s|
               "lib/locomotive/relational_algebra/operators/tables/ref_table.rb",
               "lib/locomotive/relational_algebra/operators/typeing.rb",
               "lib/locomotive/relational_algebra/operators/typeing/cast.rb",
+              "lib/locomotive/relational_algebra/operators/error.rb",
+              "lib/locomotive/relational_algebra/operators/error/error.rb",
               "lib/locomotive/relational_algebra/ordering.rb",
               "lib/locomotive/relational_algebra/query_information.rb",
               "lib/locomotive/relational_algebra/rel_alg_ast_node.rb",

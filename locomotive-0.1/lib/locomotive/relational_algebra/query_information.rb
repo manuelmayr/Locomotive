@@ -315,8 +315,10 @@ module Locomotive
 
       def add(side_effect)
         SideEffects.new(
-          @side.clone + to_side_effect(side_effect))
+          @side.clone + to_side_effect(side_effect.clone))
       end
+      alias :+ :add
+
 
       def plan
         @side.reduce(Nil.new) do |s1, s2|
@@ -358,7 +360,7 @@ module Locomotive
             SideEffects.new([])
           when Array === side_effects then
             SideEffects.new(side_effects)
-          when SideEffects == side_effects then
+          when SideEffects === side_effects then
             side_effects
           else raise ArgumentError,
                      "side_effects doesn't seem to be a side_effect"

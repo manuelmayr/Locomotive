@@ -38,6 +38,7 @@ Gem::Specification.new do |s|
               "lib/locomotive/relational_algebra/operators/boolean/and.rb",
               "lib/locomotive/relational_algebra/operators/boolean/basic_boolean.rb",
               "lib/locomotive/relational_algebra/operators/boolean/or.rb",
+              "lib/locomotive/relational_algebra/operators/boolean/not.rb",
               "lib/locomotive/relational_algebra/operators/builtins.rb",
               "lib/locomotive/relational_algebra/operators/builtins/arith_builtin.rb",
               "lib/locomotive/relational_algebra/operators/builtins/basic_builtin.rb",

@@ -11,7 +11,7 @@ module Locomotive
       include AstHelpers::Annotations
 
       [:project, :attach,
-       :or, :and,
+       :or, :and, :not,
        :aggr,
        :select,
        :difference, :union,
@@ -36,7 +36,7 @@ module Locomotive
         end
       end
 
-      [:max, :min, :count, :avg, :sum].each do |meth|
+      [:max, :min, :count, :avg, :sum, :all].each do |meth|
         define_method(meth) do |*args|
           Aggr.new(self,
                    ::Locomotive::RelationalAlgebra.const_get(meth.classify).instance,

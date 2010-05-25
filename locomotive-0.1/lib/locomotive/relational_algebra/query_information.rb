@@ -37,38 +37,42 @@ module Locomotive
         self.clone.surrogates.delete_if(&lambda)
       end
     
-      def itapp(q_0, itbl_2)
-        if self.keys != itbl_2.keys
+      def itapp(q_0, *itbls)
+        if itbls.any? { |i| self.keys != i.keys }
           raise ITblsNotEqual,
-                "#{self.keys} != #{itbl_2.keys}"
+                "some itbls keys are not equal"
         end
     
-        if self.empty? and itbl_2.empty?
+        if self.empty? and 
+           itbls.all? { |i| i.empty? }
           return SurrogateList.new( {} )
         end
     
         c = self.first.first
     
         q1_in = self[c]
-        q2_in = itbl_2[c]
+        qs_in = itbls.map { |itbl| itbl[c] }
 
-        q1, q2 = q1_in.plan, q2_in.plan
+        q1 = q1_in.plan
+        qs = qs_in.map { |q| q.plan }
         cols_q1, itbls_q1 = q1_in.column_structure, q1_in.surrogates
-        iter_, iter__, item_, item__ = Iter.new(2), Iter.new(3),
+        ord, ord_, item_, item__ = Iter.new(2), Iter.new(3),
                                        Item.new(2), Item.new(3)
       
         # (1)
-        q = q1.attach(AttachItem.new(iter_, RAtomic.new(1, RNat.type))).
-               union(q2.attach(AttachItem.new(iter_, RAtomic.new(2, RNat.type)))).
-               row_num(item_, [], [Iter.new(1), iter_, Pos.new(1)])
+        q1_ = q1.attach(AttachItem.new(ord, RAtomic.new(1, RNat.type)))
+        q = qs.zip(2..qs.size+1).reduce(q1_) do |p1,p2|
+              p1.union(
+                 p2.first.attach(AttachItem.new(ord, RAtomic.new(p2.last, RNat.type))))
+            end.row_num(item_, [], [Iter.new(1), ord, Pos.new(1)])
         
         #(2)
-        c_new = (self.keys + itbl_2.keys).max.inc(100)
+        c_new = itbls.reduce(self.keys) { |i1,i2| i1 + i2.keys }.max.inc(100)
 
-        q_ = q_0.project( iter_ => [iter__],
+        q_ = q_0.project( ord => [ord_],
                           item_ => [item__],
                           c     => [c_new] ).
-                 theta_join(q, [Equivalence.new(iter__, iter_),
+                 theta_join(q, [Equivalence.new(ord_, ord),
                                 Equivalence.new(c_new, Iter.new(1))] ).
                  project( { item__ => [Iter.new(1)],
                             Pos.new(1) => [Pos.new(1)],
@@ -79,16 +83,15 @@ module Locomotive
                               end.to_hash) )
 
          # (3)          
-         itbl_ = q1_in.surrogates.itapp(q, q2_in.surrogates)
+         itbl_ = q1_in.surrogates.itapp(q, *qs_in.map { |q| q.surrogates })
          # (4)
          itbl__ = SurrogateList.new(
                          self.delete_if { |k,v| k == c}).itapp(q_0,
-                                               SurrogateList.new(itbl_2.delete_if { |k,v| k == c}))
+                                               *itbls.map { |i| SurrogateList.new(i.delete_if { |k,v| k == c}) })
          # (5)
          SurrogateList.new( { c => QueryInformationNode.new(
                                      q_, cols_q1, itbl_) } ) + itbl__
       end
-      def_sig :itapp, Operator, SurrogateList
 
       def itsel(q_0)
         return SurrogateList.new({}) if self.empty? 

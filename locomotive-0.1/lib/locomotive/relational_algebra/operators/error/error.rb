@@ -1,6 +1,7 @@
 module Locomotive
 
   module RelationalAlgebra
+
     class Error < Binary
       attr_accessor :item
       def_sig :item=, ConstAttribute
@@ -44,6 +45,7 @@ module Locomotive
           item.clone)
       end
     end
+
   end
 
 end

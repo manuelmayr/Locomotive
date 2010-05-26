@@ -14,7 +14,7 @@ module Locomotive
        :or, :and, :not,
        :aggr,
        :select,
-       :difference, :union,
+       :difference, :union, :distinct,
        :cross, :equi_join, :theta_join,
        :equal, :greater_than,
        :less_than, :less_equal_than,

@@ -75,6 +75,7 @@ Gem::Specification.new do |s|
               "lib/locomotive/relational_algebra/operators/set/basic_set.rb",
               "lib/locomotive/relational_algebra/operators/set/difference.rb",
               "lib/locomotive/relational_algebra/operators/set/union.rb",
+              "lib/locomotive/relational_algebra/operators/set/distinct.rb",
               "lib/locomotive/relational_algebra/operators/tables.rb",
               "lib/locomotive/relational_algebra/operators/tables/literal_table.rb",
               "lib/locomotive/relational_algebra/operators/tables/nil.rb",

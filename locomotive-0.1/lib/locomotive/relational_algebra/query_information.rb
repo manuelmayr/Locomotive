@@ -94,8 +94,9 @@ module Locomotive
       def itsel(q_0)
         return SurrogateList.new({}) if self.empty? 
 
-        c, c_ = self.first.first, self.keys.max.inc
+        c = self.first.first
         cols, itbls, q = self[c].column_structure, self[c].surrogates, self[c].plan
+        c_ = (self.keys + cols.items).max.inc
 
         # (1)
         q_ = q.equi_join(q_0.project( c => [c_]), Iter.new(1), c_).

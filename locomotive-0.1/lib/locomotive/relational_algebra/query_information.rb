@@ -7,7 +7,6 @@ module Locomotive
     
     class SurrogateList
       protected
-    
       attr_accessor :surrogates
       def_sig :surrogates=, { ConstAttribute => QueryInformationNode }
     
@@ -34,7 +33,7 @@ module Locomotive
       end
 
       def delete_if(&lambda)
-        self.clone.surrogates.delete_if(&lambda)
+        SurrogateList.new(self.clone.surrogates.delete_if(&lambda))
       end
     
       def itapp(q_0, *itbls)
@@ -85,9 +84,8 @@ module Locomotive
          # (3)          
          itbl_ = q1_in.surrogates.itapp(q, *qs_in.map { |q| q.surrogates })
          # (4)
-         itbl__ = SurrogateList.new(
-                         self.delete_if { |k,v| k == c}).itapp(q_0,
-                                               *itbls.map { |i| SurrogateList.new(i.delete_if { |k,v| k == c}) })
+         itbl__ = self.delete_if { |k,v| k == c}.
+                    itapp(q_0, *itbls.map { |i| i.delete_if { |k,v| k == c} })
          # (5)
          SurrogateList.new( { c => QueryInformationNode.new(
                                      q_, cols_q1, itbl_) } ) + itbl__
@@ -104,8 +102,7 @@ module Locomotive
                project( [Iter.new(1), Pos.new(1)] + cols.items )
 
         itbls_ = itbls.itsel(q_)
-        itbls__ = SurrogateList.new(
-                    self.clone.delete_if { |k,v| k == c }).itsel(q_0)
+        itbls__ = self.delete_if { |k,v| k == c }.itsel(q_0)
 
         SurrogateList.new(
           { c => QueryInformationNode.new(q_, cols, itbls_) }.
@@ -121,21 +118,20 @@ module Locomotive
       end
     
       def clone
-        SurrogateList.new( surrogates.map { |k,v| [k.clone,v.clone] }.to_hash )
+        # only clone the attributes since we don't modify
+        # the plan
+        SurrogateList.new( surrogates.map { |k,v| [k.clone,v] }.to_hash )
       end
 
       def filter_and_adapt(items)
         item_min = items.min
         # we are modifying the structure itself
         # so we have to clone it (sideeffect)
-        surr_new = self.clone
-        surr_new.delete_if do |it, itbl|
+        surr_new = self.delete_if do |it, itbl|
           !items.member?(it)
         end
-
        # adapt the keys
-       surr_new.keys.each { |k| k.dec!(item_min.id - 1) }
-       surr_new
+       surr_new.map { |k,p| [Item.new(k.id - (item_min.id - 1)), p] }
      end
     end
 
@@ -236,8 +232,9 @@ module Locomotive
         def add(entries)
           entries_ = entries
           entries_ = entries.entries if ColumnStructure === entries
-          ColumnStructure.new(self.entries + entries)
+          ColumnStructure.new(self.entries + entries_.map { |e| to_cs_entry(e) })
         end
+        alias :+ :add
 
         def [](attribute_index)
           # just look on the surface if you find the right attribute
@@ -318,7 +315,7 @@ module Locomotive
 
       def add(side_effect)
         SideEffects.new(
-          @side.clone + to_side_effect(side_effect.clone))
+          @side + to_side_effect(side_effect))
       end
       alias :+ :add
 
@@ -399,7 +396,7 @@ module Locomotive
       end
     
       def clone
-        QueryInformationNode.new(plan.clone,
+        QueryInformationNode.new(plan,
                                  column_structure.clone,
                                  surrogates.clone)
       end
@@ -475,7 +472,7 @@ module Locomotive
       end
     
       def clone
-        QueryPlanBundle.new( logical_query_plans.clone )
+        QueryPlanBundle.new( logical_query_plans )
       end
     end
 

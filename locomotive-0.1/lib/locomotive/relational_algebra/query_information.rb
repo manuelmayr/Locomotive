@@ -6,10 +6,6 @@ module Locomotive
     class QueryInformationNode; end
     
     class SurrogateList
-      protected
-      attr_accessor :surrogates
-      def_sig :surrogates=, { ConstAttribute => QueryInformationNode }
-    
       public
       delegate :[],
                :to_a,
@@ -17,7 +13,11 @@ module Locomotive
                :keys,
                :empty?,
                :first,
+               :size,
                :to => :surrogates
+
+      attr_accessor :surrogates
+      def_sig :surrogates=, { ConstAttribute => QueryInformationNode }
     
       def initialize(hash)
         self.surrogates = hash   
@@ -55,8 +55,8 @@ module Locomotive
         q1 = q1_in.plan
         qs = qs_in.map { |q| q.plan }
         cols_q1, itbls_q1 = q1_in.column_structure, q1_in.surrogates
-        ord, ord_, item_, item__ = Iter.new(2), Iter.new(3),
-                                       Item.new(2), Item.new(3)
+        ord, ord_, item_, item__ = Iter.new(2), Iter.new(4),
+                                       Iter.new(3), Item.new(3)
       
         # (1)
         q1_ = q1.attach(AttachItem.new(ord, RAtomic.new(1, RNat.type)))
@@ -66,8 +66,7 @@ module Locomotive
             end.row_num(item_, [], [Iter.new(1), ord, Pos.new(1)])
         
         #(2)
-        c_new = itbls.reduce(self.keys) { |i1,i2| i1 + i2.keys }.max.inc(100)
-
+        c_new = Iter.new(5)
         q_ = q_0.project( ord => [ord_],
                           item_ => [item__],
                           c     => [c_new] ).
@@ -140,6 +139,11 @@ module Locomotive
     end
 
     class OffsetType < ColumnStructureEntry
+      private
+        include Locomotive::XML
+        def_node :offset_
+
+      public
       attr_reader :offset,
                   :type
 
@@ -156,9 +160,18 @@ module Locomotive
         OffsetType.new(offset.clone,
                        type.clone)
       end
+
+      def to_xml
+        offset_ :item => offset.to_xml, :type => type.to_xml
+      end
     end
 
     class AttributeColumnStructure < ColumnStructureEntry
+      private
+        include Locomotive::XML
+        def_node :attribute_
+
+      public
       attr_reader :attribute,
                   :column_structure
 
@@ -175,10 +188,18 @@ module Locomotive
         AttributeColumnStructure.new(attribute.clone,
                                      column_structure.clone)
       end
+
+      def to_xml
+        attribute_ :name => attribute.to_xml do
+          column_structure.to_xml
+        end
+      end
     end
 
     class ColumnStructure
       private
+        include Locomotive::XML
+        def_node :column_structure
 
         def to_cs_entry(entry)
           return entry if OffsetType === entry or AttributeColumnStructure === entry
@@ -289,6 +310,14 @@ module Locomotive
             it.dec!(item_min.id - 1)
           end
           cs_new
+        end
+
+        def to_xml
+          column_structure do
+            entries.collect do |e|
+              e.to_xml
+            end.join
+          end
         end
     end
     
@@ -405,6 +434,11 @@ module Locomotive
     
     class ResultType
       include Singleton
+
+      class << self
+        alias :type :instance
+      end
+
       def to_xml
         self.class.to_s.split("::").last.upcase
       end
@@ -414,60 +448,118 @@ module Locomotive
         self
       end
     end
-    class Tuple < ResultType; end 
+
+    class List < ResultType; end
+    class Atom < ResultType; end
+
+    class QueryPlan
+      private 
+      
+      include Locomotive::XML
+      def_node :query_plan,
+               :properties, :property
+
+      public
+
+      attr_reader :id,
+                  :idref,
+                  :colref,
+                  :plan,
+                  :cols,
+                  :result_type
+
+      def initialize(plan, cols, id, result_type=nil, idref=nil, colref=nil)
+        @id = id
+        @idref = idref
+        @colref = colref
+        @result_type = result_type
+        @plan = plan
+        @cols = cols
+      end
+
+      def to_xml
+        attributes = { :id => id }
+        attributes.merge!({ :idref => idref }) if idref
+        attributes.merge!({ :colref => colref }) if colref
+
+        query_plan(attributes) do
+          p = []
+          p << properties do
+                 property(:name => :overallResultType, :value => result_type.to_xml)
+               end if result_type
+          p << plan.serialize
+          p.join
+        end
+      end
+    end
 
    
     class QueryPlanBundle
     private
-      def collect_surrogates(surr)
-        lplans = []
-        surr.each do |attr,q_in|
-          lplans << SerializeRelation.new(
-                      q_in.side_effects.plan, q_in.plan,
-                      Iter.new(1), Pos.new(1), q_in.column_structure.items)
-          lplans += collect_surrogates(q_in.surrogates)
+#      def collect_surrogates(surr)
+#        lplans = []
+#        surr.each do |attr,q_in|
+#          lplans << [SerializeRelation.new(
+#                      q_in.side_effects.plan, q_in.plan,
+#                      Iter.new(1), Pos.new(1), q_in.column_structure.items),
+#                     q_in.column_structure]
+#          lplans += collect_surrogates(q_in.surrogates)
+#        end
+#        lplans
+#      end
+
+      def collect_surrogates(items, last_id, surr)
+        next_id= last_id + 1
+        surr.surrogates.map do |attr,qin|
+          plan = qin.plan
+          cols = qin.column_structure
+          side = qin.side_effects.plan
+          surr = qin.surrogates
+
+          colref = items.index(attr) + 1
+
+          ser = SerializeRelation.new(
+                  side, plan,
+                  Iter.new(1), Pos.new(1), cols.items)
+          qp = QueryPlan.new(
+                 ser, cols, next_id, nil, last_id, colref)
+          qps = collect_surrogates(cols.items, next_id, surr)
+          next_id += qps.flatten.size + 1
+          [qp] + qps
         end
-        lplans
       end
 
     public 
       include Locomotive::XML
       def_node :query_plan_bundle,
-               :query_plan,
-               :properties, :property
+               :csstructure
+
     
       XML_Prolog = '<?xml version="1.0" encoding="UTF-8"?>'+"\n"
     
-      attr_accessor :logical_query_plans
-      def_sig :logical_query_plans=, [Operator]
-    
-      def initialize(op)
-        SerializeRelation.new(
-          op.side_effects.plan, op.plan,
-          Iter.new(1), Pos.new(1), op.column_structure.items)
+      attr_accessor :query_plans
+      attr :cs_structure
 
-        lplans = []
-        lplans <<
-           SerializeRelation.new(
-              op.side_effects.plan, op.plan,
-              Iter.new(1), Pos.new(1), op.column_structure.items)
-           
-        lplans += collect_surrogates(op.surrogates)
-        
-        self.logical_query_plans = lplans
+      def initialize(qin, type)
+        plan = qin.plan
+        cols = qin.column_structure
+        side = qin.side_effects.plan
+        surr = qin.surrogates
+
+        ser = SerializeRelation.new(
+                side, plan,
+                Iter.new(1), Pos.new(1),
+                cols.items)
+
+        qp = QueryPlan.new(ser, cols, 0, type)
+        self.query_plans = [qp, collect_surrogates(cols.items, 0, surr)].flatten
       end
-    
+
       def to_xml
-        qid = -1
         XML_Prolog +
         query_plan_bundle do
-          logical_query_plans.collect do |lplan|
-            query_plan :id => qid += 1, :idref => qid - 1, :colref => 1 do
-              [properties do
-                 property(:name => :overallResultType, :value => :LIST)
-               end,
-               lplan.serialize].join
-            end
+          query_plans.map do |qp|
+            qp.to_xml
           end.join
         end
       end

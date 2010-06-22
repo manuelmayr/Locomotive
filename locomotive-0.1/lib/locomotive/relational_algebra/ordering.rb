@@ -6,6 +6,10 @@ module Locomotive
     # order a column should follow
     class SortDirection
       include Singleton
+
+      class << self
+        alias :dir :instance
+      end
     
       def to_xml
         self.class.to_s.split('::').last.downcase.to_sym

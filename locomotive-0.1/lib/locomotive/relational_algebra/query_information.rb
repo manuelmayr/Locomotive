@@ -228,13 +228,13 @@ module Locomotive
         def search_by_attribute(attribute)
           entries.select do |entry|
             entry.attribute == attribute
-          end[0]
+          end.first
         end
 
         def search_by_item(offset)
           entries.select do |entry|
             entry.offset == offset
-          end[0]
+          end.first
         end
 
       public
@@ -260,18 +260,22 @@ module Locomotive
 
         def [](attribute_index)
           # just look on the surface if you find the right attribute
-          case 
-            when Fixnum === attribute_index then
+          case attribute_index
+            when Fixnum then
               entries[attribute_index]
-            when Symbol === attribute_index then 
+            when Symbol then 
+              # creating an attribute to be consistent in the signature
               attribute = Attribute.new(attribute_index)
-              search_by_attribute(attribute).column_structure
-            when Attribute === attribute_index then
-              search_by_attribute(attribute_index).column_structure
-            when Item === attribute_index then
-              ColumnStructure.new([search_by_item(attribute_index)])
+              attr = search_by_attribute(attribute).
+              attr.nil? ? nil : attr.column_structure
+            when Attribute then
+              attr = search_by_attribute(attribute_index)
+              attr.nil? ? nil : attr.column_structure
+            when Item then
+              attr = search_by_attribute(attribute_index)
+              attr.nil? ? nil : ColumnStructure.new([search_by_item(attribute_index)])
             else 
-              raise ArgumentError, "[] in ColumnStructure"
+              raise ArgumentError, "Argument should be a (Fixnum | Symbol | Attribute | Item)"
           end
         end
 

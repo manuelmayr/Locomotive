@@ -156,6 +156,10 @@ module Locomotive
         [offset]
       end
 
+      def offsets
+        [self]
+      end
+
       def clone
         OffsetType.new(offset.clone,
                        type.clone)
@@ -181,7 +185,11 @@ module Locomotive
       end
 
       def items
-        column_structure.items
+        column_structure.items.flatten
+      end
+
+      def offsets
+        column_structure.offsets.flatten
       end
 
       def clone
@@ -202,11 +210,14 @@ module Locomotive
         def_node :column_structure
 
         def to_cs_entry(entry)
-          return entry if OffsetType === entry or AttributeColumnStructure === entry
+          return entry if OffsetType === entry or
+                          AttributeColumnStructure === entry
 
-          raise ArgumentError,
-                "entry is not a column_structure_entry" if !(Array === entry and
-                                                             entry.size == 2)
+          if !(Array === entry and entry.size == 2) then
+            raise ArgumentError,
+                  "entry is not a column_structure_entry"
+          end
+
           case
             when Item === entry.first,
                  RType === entry.last then
@@ -243,6 +254,8 @@ module Locomotive
         delegate :first,
                  :map,
                  :collect,
+                 :count,
+                 :zip,
                  :to => :entries
 
         def initialize(entries)
@@ -253,8 +266,11 @@ module Locomotive
 
         def add(entries)
           entries_ = entries
-          entries_ = entries.entries if ColumnStructure === entries
-          ColumnStructure.new(self.entries + entries_.map { |e| to_cs_entry(e) })
+          if ColumnStructure === entries then
+            entries_ = entries.entries
+          end
+          ColumnStructure.new(self.entries +
+            entries_.map { |e| to_cs_entry(e) })
         end
         alias :+ :add
 
@@ -275,7 +291,8 @@ module Locomotive
               attr = search_by_attribute(attribute_index)
               attr.nil? ? nil : ColumnStructure.new([search_by_item(attribute_index)])
             else 
-              raise ArgumentError, "Argument should be a (Fixnum | Symbol | Attribute | Item)"
+              raise ArgumentError, 
+                    "Argument should be a (Fixnum | Symbol | Attribute | Item)"
           end
         end
 
@@ -301,6 +318,12 @@ module Locomotive
         def items
           entries.map do |entry|
             entry.items
+          end.flatten
+        end
+
+        def offsets
+          entries.map do |entry|
+            entry.offsets
           end.flatten
         end
 
@@ -371,7 +394,7 @@ module Locomotive
           when ColumnStructure === cs_structure then
             cs_structure 
           else raise ArgumentError,
-                     "cs_structure doesn't seem to be a paylad_list"
+                     "#{cs_structure.class} is not a column_structure"
         end
       end
 
@@ -427,6 +450,33 @@ module Locomotive
                                " #{self.column_structure.items.inspect}"
         end
         self.methods = methods
+      end
+
+      def frag 
+        itbls_hash = {}
+
+        column_structure.
+          zip(1..column_structure.count).each do |c, i|
+
+          cols_c = column_structure[i-1].column_structure.adapt
+          itbls_c = surrogates.filter_and_adapt(c.items)
+
+          q_c = plan.project({ Iter.new(1) => [Iter.new(1)],
+                               Pos.new(1)  => [Pos.new(1)] }.
+                             merge(
+                               c.items.zip(cols_c.items).
+                                 map do |old,new|
+                                 [old,[new]]
+                               end.to_hash))
+        
+          itbls_hash = itbls_hash.merge(
+                          { Item.new(i) => QueryInformationNode.new(
+                                             q_c,
+                                             cols_c,
+                                             itbls_c) })
+        end
+
+        SurrogateList.new( itbls_hash )
       end
     
       def clone

@@ -42,7 +42,24 @@ module Locomotive
         end
       end
     end
+
+    class PredLessThan < Predicate
+      def to_xml
+         comparison :kind => :lt do
+          [column(:name => first.to_xml, :new => false, :position => 1),
+           column(:name => second.to_xml, :new => false, :position => 2)].join
+        end
+      end
+    end
     
+    class PredGreaterThan < Predicate
+      def to_xml
+         comparison :kind => :gt do
+          [column(:name => first.to_xml, :new => false, :position => 1),
+           column(:name => second.to_xml, :new => false, :position => 2)].join
+        end
+      end
+    end
     
     class PredicateList
       include Locomotive::XML

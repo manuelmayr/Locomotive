@@ -109,6 +109,42 @@ module Locomotive
           merge( itbls__.to_a.to_hash ) )
       end
 
+      def join
+        itbls = surrogates.to_a
+
+        itbls.rest.reduce(itbls.first.last) do |qi,surr|
+          # the query_information node
+          qin_j = surr.last
+           
+          cols_j  = surr.last.column_structure
+          itbls_j = surr.last.surrogates
+          cols_c  = qi.column_structure
+          itbls_c = qi.surrogates
+
+          # adapt cols
+          cols_j_ = cols_j.clone
+          cols_j_.items.each { |i| i.inc!(qi.column_structure.count) }
+          # adapt itbls
+          itbls_j_ = itbls_j.map { |k,q| [k.inc(qi.column_structure.count), q] }
+
+          # calculate new plan
+          q_j = qin_j.plan.project({ Iter.new(1) => [Iter.new(2)],
+                                     Pos.new(1)  => [Pos.new(2)] }.
+                                    merge(
+                                      cols_j.items.zip(cols_j_.items).
+                                        map do |old,new|
+                                          [old,[new]]
+                                        end.to_hash))
+
+          q_ = q_j.theta_join(qi.plan, [Equivalence.new(Iter.new(2), Iter.new(1)),
+                                                Equivalence.new(Pos.new(2), Pos.new(1))]).
+                           project([Iter.new(1), Pos.new(1)] + cols_c.items + cols_j_.items)
+
+
+          QueryInformationNode.new(q_, cols_c + cols_j_, itbls_c + itbls_j_)
+        end
+      end
+
       def set(var, plan)
         self.map do |item, itbl|
           [item,QueryInformationNode.new(itbl.plan.set(var, plan), 
@@ -266,9 +302,11 @@ module Locomotive
 
         def add(entries)
           entries_ = entries
+
           if ColumnStructure === entries then
             entries_ = entries.entries
           end
+
           ColumnStructure.new(self.entries +
             entries_.map { |e| to_cs_entry(e) })
         end
@@ -466,7 +504,7 @@ module Locomotive
                              merge(
                                c.items.zip(cols_c.items).
                                  map do |old,new|
-                                 [old,[new]]
+                                   [old,[new]]
                                end.to_hash))
         
           itbls_hash = itbls_hash.merge(

@@ -11,9 +11,6 @@ Gem::Specification.new do |s|
   s.platform = Gem::Platform::RUBY
   s.summary = ""
   s.files = [ "lib/locomotive.rb",
-              "lib/locomotive/engine.rb",
-              "lib/locomotive/engine/sql.rb",
-              "lib/locomotive/engine/sql/engine.rb",
               "lib/locomotive/misc.rb",
               "lib/locomotive/misc/array_ext.rb",
               "lib/locomotive/misc/hash_ext.rb",

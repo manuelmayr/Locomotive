@@ -107,7 +107,6 @@ Gem::Specification.new do |s|
               "lib/locomotive/tree_helpers/ast.rb",
               "lib/locomotive/tree_helpers/ast_traversal.rb",
               "lib/locomotive/utils.rb",
-              "lib/locomotive/utils/ast2dot.rb",
               "lib/locomotive/utils/relalg2xml.rb",
               "lib/locomotive/utils/xml.rb"
             ]

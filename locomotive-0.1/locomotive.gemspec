@@ -3,11 +3,19 @@ require "rake"
 
 Gem::Specification.new do |s|
   s.name = "locomotive"
-  s.version = "0.01"
+  s.version = "0.0.1"
 
   s.author = "Manuel Mayr"
   s.email = "mayr@informatik.uni-tuebingen.de"
-  s.homepage = ""
+  s.homepage = "http://www-db.informatik.uni-tuebingen.de/research/pathfinder"
+  s.description = %q{Ruby representation of the Pathfinder-Algebra
+                     (http://www-db.informatik.uni-tuebingen.de/research/pathfinder).
+                     
+                     This gem provides a Ruby interface to the Pathfinder-Algebra.
+                     Taking an algebraic plan in XML, Pathfinder is able to generate
+                     code for various database systems (SQL-99 conformant, MonetDB,
+                     X100, ...). In order to generate efficient target code it also
+                     does heavy optimization on the input plans.}
   s.platform = Gem::Platform::RUBY
   s.summary = ""
   s.files = [ "lib/locomotive.rb",
@@ -97,8 +105,6 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   s.test_files = FileList["{test}/**/*test.rb"].to_a
   s.has_rdoc = false
-# s.extra_rdoc_files = ["README"]
-# s.add_dependency("dependency", ">= 0.x.x")
 
   if s.respond_to? :secification_version then
     current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION

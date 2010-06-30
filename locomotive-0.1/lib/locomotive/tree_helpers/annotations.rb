@@ -1,3 +1,4 @@
+require 'pp'
 module Locomotive
 
 module AstHelpers
@@ -18,7 +19,9 @@ module Annotations
   # to pretend there are ann_-methods
   def respond_to? sym
     @annotations ||= {}
-    if @annotations.member? sym
+    if @annotations.keys.member?( sym.to_s[-1,1] != "=" ? 
+                                    sym :
+                                    sym.to_s[0..-2].to_sym )
       true
     else
       super.respond_to? sym

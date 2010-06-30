@@ -105,11 +105,11 @@ Gem::Specification.new do |s|
     s.secification_version = 3
   
     if Gem::Version.new(Gem::RubyGemsVersion) >= Gem::Version.new('1.2.0') then
-      s.add_runtime_dependency(%<activesupport>, [">= 3.0.0.beta"])
+#      s.add_runtime_dependency(%<activesupport>, [">= 3.0.0.beta"])
     else
-      s.add_dependency(%<activesupport>)
+#      s.add_dependency(%<activesupport>)
     end
   else
-    s.add_dependency(%<activesupport>)
+#    s.add_dependency(%<activesupport>)
   end
 end

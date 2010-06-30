@@ -9,9 +9,8 @@ Gem::Specification.new do |s|
   s.email = "mayr@informatik.uni-tuebingen.de"
   s.homepage = "http://www-db.informatik.uni-tuebingen.de/research/pathfinder"
   s.description = %q{Ruby representation of the Pathfinder-Algebra
-                     (http://www-db.informatik.uni-tuebingen.de/research/pathfinder).
+                     (http://www-db.informatik.uni-tuebingen.de/research/pathfinder).\n
                      
-                     This gem provides a Ruby interface to the Pathfinder-Algebra.
                      Taking an algebraic plan in XML, Pathfinder is able to generate
                      code for various database systems (SQL-99 conformant, MonetDB,
                      X100, ...). In order to generate efficient target code it also

@@ -14,6 +14,7 @@ module Locomotive
       def initialize
         raise AbstractClassError,
               "#{self.class} is an abstract class" if self.class == Operator
+        super()
         self.schema = Schema.new({})
       end
     
@@ -32,11 +33,9 @@ module Locomotive
       def to_xml
         cont_list = [ xml_schema,
                       xml_content ]
-        cont_list << edge(:to => left_child.ann_xml_id) if has_left_child? and 
-                                                           left_child.respond_to? :ann_xml_id
-        cont_list << edge(:to => right_child.ann_xml_id) if has_right_child? and
-                                                            right_child.respond_to? :ann_xml_id
-        node :id => ann_xml_id,
+        cont_list << edge(:to => left_child.id) if has_left_child?
+        cont_list << edge(:to => right_child.id) if has_right_child? 
+        node :id => id,
              :kind => xml_kind do
           cont_list.join
         end

@@ -19,8 +19,8 @@ module Locomotive
       
       # check if there are duplicates in the schemas
       def duplicates?(schema)
-        (self.attributes + schema.attributes).length >
-        (self.attributes + schema.attributes).uniq.length
+        new_schema = (self.attributes + schema.attributes)
+        new_schema.length > new_schema.uniq.length
       end
       def_sig :duplicates?, Schema
     

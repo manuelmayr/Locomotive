@@ -1,7 +1,6 @@
 module Locomotive
 
-  module RelationalAlgebra
-
+  module RelationalAlgebra 
     # Forward declaration 
     class QueryInformationNode; end
     

@@ -32,7 +32,6 @@ module Locomotive
               "#{self.class} is an abstract class" if self.class == ConstAttribute
         self.id = id
       end
-    
    
       def inc(val=1)
         self.class.new(self.id + val)
@@ -56,14 +55,14 @@ module Locomotive
         # overwrite the eql?- and hash-method
         # to make it work 
         def eql?(other)
-          self.==(other)
+          self == other
         end
         def_sig :eql?, ConstAttribute
     
         def hash
           # not the best algorithm for calculating a
           # hash but it works quite well
-          self.class.object_id + id.object_id
+          self.class.object_id + id
         end
       end
       include HashKeys

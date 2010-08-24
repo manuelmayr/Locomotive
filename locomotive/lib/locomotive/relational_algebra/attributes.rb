@@ -45,10 +45,14 @@ module Locomotive
       include Comparable
       # only objects of the same class are comparable
       def <=>(other)
-        raise ArgumentError, 
-              "#{self.class.inspect} != #{other.class.inspect} " \
-              "when calling <=>" \
-          unless self.class == other.class
+        if self.class != other.class then
+          return nil
+# raising an ArgumentError is very inefficent since this method
+# is called rather often during compilation 
+#          raise ArgumentError, 
+#                "#{self.class.inspect} != #{other.class.inspect} " \
+#                "when calling <=>"
+        end
         self.id <=> other.id
       end
       def_sig :<=>, ConstAttribute

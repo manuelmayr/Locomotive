@@ -18,9 +18,9 @@ module Locomotive
       def_sig :schema=, { ConstAttribute => [RType] }
       
       # check if there are duplicates in the schemas
-      def duplicates?(schema)
-        (self.attributes + schema.attributes).length >
-        (self.attributes + schema.attributes).uniq.length
+      def duplicates?(schm)
+        new_schema = (self.attributes + schm.attributes)
+        new_schema.length > new_schema.uniq.length
       end
       def_sig :duplicates?, Schema
     
@@ -31,11 +31,11 @@ module Locomotive
                :to => :schema
     
       def initialize(hash)
-        self.schema = hash
+        @schema = hash
       end
     
       def attributes
-        schema.keys
+        @schema.keys
       end
     
       def attributes?(attributes)
@@ -43,30 +43,31 @@ module Locomotive
       end
       def_sig :attributes?, [ConstAttribute]
     
+      def []=(attr,types)
+        raise Duplicates, 
+               "#{attr.inspect} results in duplicates " \
+               "in schema #{attributes}" unless self[attr].nil?
+        schema[attr] = types
+      end
+      def_sig :[]=, ConstAttribute, [RType]
+ 
       # merges two schemas, given that there are
       # no duplicate keys
       def +(schm)
         if duplicates?(schm)
           raise Duplicates,
-                "Found duplicates in #{self.attributes} " \
+                "Found duplicates in #{attributes} " \
                 "and #{schm.attributes}."
         end
         # create a new schema
-        Schema.new(schema.merge(schm.schema))
+        Schema.new(@schema.merge(schm.schema))
       end
       def_sig :+, Schema
     
-      def []=(attr,types)
-        raise Duplicates, 
-               "#{attr.inspect} results in duplicates " \
-               "in schema #{self.attributes}" unless self[attr].nil?
-        schema[attr] = types
-      end
-      def_sig :[]=, ConstAttribute, [RType]
-    
+   
       def to_xml
         _schema_ do
-          self.schema.collect do |attr,types|
+          @schema.collect do |attr,types|
             col :name => attr.to_xml,
                 :type => types.collect { |ty| ty.to_xml }.join(",")
           end.join

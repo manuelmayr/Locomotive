@@ -10,13 +10,15 @@ module AstHelpers
 module AstNode
   private
   
-  DEFAULT_TRAVERSE_STRATEGY = PreOrderTraverse
+  DEFAULT_TRAVERSE_STRATEGY = PostOrderTraverse.new
 
   public
 
   attr_accessor :kind,
                 :value,
-                :owner
+                :owner,
+                :id,
+                :strategy
 
   attr_reader :left_child,
               :right_child
@@ -36,15 +38,8 @@ module AstNode
   # The values 2. - 5. can be omitted because there can be
   # some nodes with a kind only (e.g. separators).
   # A node with neither left- nor right-child is a leaf-node.
-  def initialize(kind,
-                 value = nil,
-                 left = nil,
-                 right = nil)
-    self.owner = nil
-    self.kind, self.value = kind, value
-    self.left_child  = left  if left  != nil
-    self.right_child = right if right != nil
-    self.traverse_strategy = DEFAULT_TRAVERSE_STRATEGY
+  def initialize
+    @strategy = DEFAULT_TRAVERSE_STRATEGY
   end
 
   # Sets a new left child 
@@ -79,15 +74,19 @@ module AstNode
   end
 
   def traverse_strategy=(strategy)
-    @strategy = strategy
-    self.left_child.traverse_strategy = strategy if self.has_left_child?
-    self.right_child.traverse_strategy = strategy if self.has_right_child?
+    traverse do |op|
+      op.strategy = strategy
+    end
+  end
+
+  def traverse_strategy
+    @strategy
   end
 
   # Traverses the ast with a given
   # strategy. If nothing given simple
   # prefix-traversal is used
-  def traverse(strategy=nil, &block)
+  def traverse(&block)
     @strategy ||= strategy || DEFAULT_TRAVERSE_STRATEGY
     @strategy.traverse(self, &block)
   end

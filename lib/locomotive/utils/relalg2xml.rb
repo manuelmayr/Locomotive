@@ -219,7 +219,7 @@ XMLNODE
 <logical_query_plan unique_names=\"true\">
 PROLOG
 
-    @ast.traverse_strategy = Locomotive::AstHelpers::PostOrderTraverse
+    @ast.traverse_strategy = Locomotive::AstHelpers::PostOrderTraverse.new
     @ast.traverse do |ast|
       node_list << to_xml_wrapper(ast)
     end

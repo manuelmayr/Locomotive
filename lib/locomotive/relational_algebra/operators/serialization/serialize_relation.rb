@@ -65,17 +65,18 @@ module Locomotive
         xml_id = 0
         xml_list = []
     
-        self.traverse_strategy = Locomotive::AstHelpers::PostOrderTraverse
+        self.traverse_strategy.clean_visited_list
         self.traverse do |op|
-          next if op.ann_vis
-          op.ann_xml_id = xml_id += 1
+          op.id = xml_id += 1
           xml_list << op.to_xml
-          op.ann_vis = true
         end
-
-        self.traverse do |op|
-          op.ann_vis = false
-        end
+#
+#        # for performance reason we want to
+#        # avoid the generic traverse function
+#        self.visited_with_children=false
+#        self.traverse do |op|
+#          op.visited = false
+#        end
     
         logical_query_plan :unique_names => true do
           xml_list.join

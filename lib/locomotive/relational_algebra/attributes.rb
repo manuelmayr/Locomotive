@@ -32,7 +32,6 @@ module Locomotive
               "#{self.class} is an abstract class" if self.class == ConstAttribute
         self.id = id
       end
-    
    
       def inc(val=1)
         self.class.new(self.id + val)
@@ -43,12 +42,20 @@ module Locomotive
         "#{self.class.to_s.split("::").last.downcase}#{nth id}".to_sym
       end
     
-      # Equality for attributes is defined over
-      # their class and id
-      def ==(other)
-        self.class == other.class and
-        self.id == other.id
+      include Comparable
+      # only objects of the same class are comparable
+      def <=>(other)
+        if self.class != other.class then
+          return nil
+# raising an ArgumentError is very inefficent since this method
+# is called rather often during compilation 
+#          raise ArgumentError, 
+#                "#{self.class.inspect} != #{other.class.inspect} " \
+#                "when calling <=>"
+        end
+        self.id <=> other.id
       end
+      def_sig :<=>, ConstAttribute
     
       module HashKeys
         # We want to use attributes as keys
@@ -56,14 +63,15 @@ module Locomotive
         # overwrite the eql?- and hash-method
         # to make it work 
         def eql?(other)
-          self.==(other)
+          self.class == other.class and
+          self.id == other.id
         end
         def_sig :eql?, ConstAttribute
     
         def hash
           # not the best algorithm for calculating a
           # hash but it works quite well
-          self.class.object_id + id.object_id
+          self.class.object_id.hash + id.hash
         end
       end
       include HashKeys
@@ -95,13 +103,6 @@ module Locomotive
       Pos.new(id)
     end
     class Item < ConstAttribute
-
-      include Comparable
-      def <=>(other)
-        self.id <=> other.id
-      end
-      def_sig :<=>, Item
-
       def inc!(id)
         self.id += id
       end
@@ -109,7 +110,6 @@ module Locomotive
       def dec!(id)
         self.id -= id 
       end
-    
     end
     def Item(id)
       Item.new(id)

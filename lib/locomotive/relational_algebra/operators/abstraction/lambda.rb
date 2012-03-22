@@ -20,12 +20,12 @@ module Locomotive
       def serialize
         xml_id = 0
         self.traverse do |op|
-          op.ann_xml_id = xml_id += 1
+          op.id = xml_id += 1
         end
     
         xml_list = []
     
-        self.traverse_strategy = Locomotive::AstHelpers::PostOrderTraverse
+        self.traverse_strategy = Locomotive::AstHelpers::PostOrderTraverse.new
         self.traverse do |op|
           xml_list << op.to_xml
         end

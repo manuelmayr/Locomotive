@@ -10,7 +10,7 @@ class ArgumentError < StandardError; end
 module TypeChecker
 
   private
-  
+
   def nth n
     n_ = n + 1
     th = case n_
@@ -111,15 +111,21 @@ module Signature
 
   public
 
+  # don't do typechecking when the module
+  # is in production state
+  DEBUG=false
+
   def def_sig sym, *types
-    types.each_with_index do |t,i|
-      unless t.kind_of? Class
-        TypeChecker.check_arg_type Class, t, :def_sig, i unless t.kind_of? Array or t.kind_of? Hash
-        TypeChecker.check_arg_type Class, t, :def_sig, i unless t.length <= 1
-        TypeChecker.check_arg_array_type Class, t, :def_sig, i if t.kind_of? Array
+    if Signature::DEBUG==true
+      types.each_with_index do |t,i|
+        unless t.kind_of? Class
+          TypeChecker.check_arg_type Class, t, :def_sig, i unless t.kind_of? Array or t.kind_of? Hash
+          TypeChecker.check_arg_type Class, t, :def_sig, i unless t.length <= 1
+          TypeChecker.check_arg_array_type Class, t, :def_sig, i if t.kind_of? Array
+        end
       end
+      intercept_method(sym, types)
     end
-    intercept_method(sym, types)
   end
   Module.send(:include, self)
 end
